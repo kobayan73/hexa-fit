@@ -1,0 +1,3973 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Hexa Fit</title>
+<style>
+  :root {
+    --bg1:#06142e;
+    --bg2:#020713;
+    --ink:#eaf7ff;
+    --glass:rgba(255,255,255,.12);
+    --glass2:rgba(255,255,255,.07);
+    --line:rgba(113,196,255,.45);
+    --shadow:rgba(0,0,0,.35);
+    --accent:#5ed4ff;
+    --panel:rgba(4,12,28,.64);
+    --page-bg:radial-gradient(circle at 50% 0%, #17376d 0, #07142d 42%, #020713 100%);
+    --page-overlay:
+      radial-gradient(circle at 68% 10%, rgba(48,130,255,.36), transparent 28%),
+      radial-gradient(circle at 28% 78%, rgba(34,112,229,.24), transparent 34%);
+    --panel-border:rgba(144,212,255,.24);
+    --panel-inset:rgba(255,255,255,.16);
+    --stage-bg:
+      radial-gradient(circle at 70% 10%, rgba(48,130,255,.48), transparent 34%),
+      radial-gradient(circle at 30% 75%, rgba(34,112,229,.32), transparent 38%),
+      linear-gradient(135deg, #061127, #0a1e45 55%, #07122b);
+    --menu-bg:rgba(4,12,28,.88);
+    --xp-bg:rgba(255,255,255,.07);
+    --xp-track-bg:rgba(4,14,32,.58);
+    --button-ink:#fff;
+    --button-bg:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.08));
+    --button-shadow:0 7px 18px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.22);
+    --primary-bg:linear-gradient(180deg, rgba(94,212,255,.42), rgba(40,116,255,.22));
+  }
+
+  body.light-theme {
+    --bg1:#f6fbff;
+    --bg2:#dceefa;
+    --ink:#31556c;
+    --glass:rgba(255,255,255,.46);
+    --glass2:rgba(255,255,255,.28);
+    --line:rgba(255,255,255,.72);
+    --shadow:rgba(80,130,160,.14);
+    --accent:#8dceff;
+    --panel:linear-gradient(145deg, rgba(255,255,255,.72), rgba(237,248,255,.34));
+    --page-bg:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,.92), transparent 30%),
+      radial-gradient(circle at 82% 18%, rgba(172,226,255,.30), transparent 34%),
+      linear-gradient(135deg, var(--bg1), var(--bg2));
+    --page-overlay:
+      linear-gradient(120deg, rgba(255,255,255,.42) 0 1px, transparent 1px 52px),
+      linear-gradient(60deg, rgba(255,255,255,.24) 0 1px, transparent 1px 52px);
+    --panel-border:rgba(255,255,255,.70);
+    --panel-inset:rgba(255,255,255,.88);
+    --stage-bg:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,.68), transparent 32%),
+      radial-gradient(circle at 82% 18%, rgba(175,226,255,.24), transparent 38%),
+      linear-gradient(135deg, #f8fcff, #dceefa);
+    --menu-bg:rgba(255,255,255,.90);
+    --xp-bg:rgba(255,255,255,.54);
+    --xp-track-bg:rgba(112,152,178,.13);
+    --button-ink:#31556c;
+    --button-bg:linear-gradient(180deg, rgba(255,255,255,.90), rgba(224,244,255,.42));
+    --button-shadow:0 7px 18px rgba(88,140,170,.13), inset 0 1px rgba(255,255,255,.94);
+    --primary-bg:linear-gradient(180deg, rgba(224,246,255,.95), rgba(157,218,255,.38));
+  }
+
+  * {
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  html, body {
+    margin:0;
+    min-height:100%;
+    width:100%;
+    overflow-x:hidden;
+    touch-action:none;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:var(--ink);
+    background:var(--page-bg);
+  }
+
+  body::before {
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.20;
+    background-image:var(--page-overlay);
+  }
+
+  body.light-theme::before {
+    opacity:.24;
+  }
+
+  .app {
+    width:min(100vw, 920px);
+    min-height:100vh;
+    margin:0 auto;
+    padding:14px 12px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .home-screen {
+    min-height:calc(100dvh - 48px);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding-top:calc((100dvh - 48px - 230px) / 2);
+  }
+
+  .home-card {
+    width:min(86vw, 370px);
+    padding:30px 22px;
+    border-radius:28px;
+    text-align:center;
+    border:1px solid var(--panel-border);
+    background:var(--panel);
+    box-shadow:
+      0 20px 50px var(--shadow),
+      inset 0 1px var(--panel-inset);
+    backdrop-filter:blur(14px);
+    transition:padding-bottom .18s ease;
+  }
+
+  .home-card:has(.settings-panel.show) {
+    padding-bottom:206px;
+  }
+
+  .home-card h1 {
+    margin:0 0 24px;
+    font-size:34px;
+    letter-spacing:0;
+  }
+
+  .home-play {
+    min-width:170px;
+    font-size:18px;
+    padding:13px 24px;
+  }
+
+  .home-actions {
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+
+  .home-settings-btn {
+    min-width:170px;
+    padding:11px 20px;
+  }
+
+  .settings-panel {
+    position:absolute;
+    left:50%;
+    top:calc(100% + 10px);
+    transform:translateX(-50%);
+    z-index:80;
+    display:none;
+    width:min(100%, 320px);
+    margin-top:0;
+    padding:12px;
+    border-radius:18px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:inset 0 1px rgba(255,255,255,.12);
+  }
+
+  .settings-panel.show {
+    display:block;
+  }
+
+  .game-settings-panel {
+    position:fixed;
+    left:50%;
+    top:50dvh;
+    right:auto;
+    transform:translate(-50%, -50%);
+    width:min(82vw, 300px);
+    z-index:300;
+    background:#07142d;
+    border-color:rgba(144,212,255,.34);
+    box-shadow:0 22px 54px rgba(0,0,0,.42), inset 0 1px rgba(255,255,255,.14);
+  }
+
+  body.light-theme .settings-panel.game-settings-panel {
+    background:#f3fbff;
+    border-color:rgba(170,215,240,.86);
+    box-shadow:0 22px 54px rgba(88,140,170,.18), inset 0 1px rgba(255,255,255,.92);
+  }
+
+  .game-settings-panel .settings-title {
+    text-align:center;
+  }
+
+  .settings-title {
+    margin:0 0 10px;
+    font-size:12px;
+    font-weight:950;
+    opacity:.78;
+  }
+
+  .setting-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:9px 0;
+  }
+
+  .setting-row + .setting-row {
+    border-top:1px solid rgba(255,255,255,.12);
+  }
+
+  .setting-label {
+    font-size:13px;
+    font-weight:900;
+    opacity:.82;
+  }
+
+  .seg-switch {
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    width:136px;
+    padding:3px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.34);
+    background:rgba(0,0,0,.16);
+    box-shadow:inset 0 1px rgba(255,255,255,.12);
+  }
+
+  .seg-switch::before {
+    content:"";
+    position:absolute;
+    top:3px;
+    left:3px;
+    width:calc(50% - 3px);
+    height:calc(100% - 6px);
+    border-radius:999px;
+    background:var(--primary-bg);
+    border:1px solid rgba(144,212,255,.42);
+    box-shadow:0 5px 12px rgba(0,0,0,.16), inset 0 1px rgba(255,255,255,.55);
+    transition:transform .18s ease;
+  }
+
+  .seg-switch[data-value="dark"]::before,
+  .seg-switch[data-value="off"]::before {
+    transform:translateX(100%);
+  }
+
+  .seg-btn {
+    position:relative;
+    z-index:1;
+    min-width:0;
+    padding:7px 8px;
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    box-shadow:none;
+    font-size:12px;
+    font-weight:950;
+    color:var(--button-ink);
+    opacity:.56;
+  }
+
+  .seg-btn.active {
+    opacity:1;
+  }
+
+  .seg-btn:active {
+    transform:none;
+    box-shadow:none;
+  }
+
+  body.light-theme .settings-panel {
+    background:rgba(255,255,255,.56);
+    border-color:rgba(255,255,255,.72);
+    box-shadow:inset 0 1px rgba(255,255,255,.88);
+  }
+
+  body.light-theme .settings-panel.game-settings-panel {
+    background:#f3fbff;
+    border-color:rgba(170,215,240,.86);
+    box-shadow:0 22px 54px rgba(88,140,170,.18), inset 0 1px rgba(255,255,255,.92);
+  }
+
+  body.light-theme .setting-row + .setting-row {
+    border-top-color:rgba(80,130,160,.13);
+  }
+
+  body.light-theme .seg-switch {
+    background:rgba(112,152,178,.12);
+    border-color:rgba(255,255,255,.72);
+    box-shadow:inset 0 1px rgba(255,255,255,.86);
+  }
+
+  body.game-mode .home-screen,
+  body.home-mode .game-screen {
+    display:none;
+  }
+
+  .top-card, .stage-card {
+    border:1px solid var(--panel-border);
+    background:var(--panel);
+    box-shadow:
+      0 20px 50px var(--shadow),
+      inset 0 1px var(--panel-inset);
+    backdrop-filter: blur(14px);
+  }
+
+  .top-card {
+    position:relative;
+    z-index:50;
+    overflow:visible;
+    border-radius:26px;
+    padding:10px;
+    text-align:center;
+  }
+
+
+  .desc {
+    display:none;
+  }
+
+  .toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-top:0;
+  }
+
+  #newBtn {
+    display:none;
+  }
+
+  #pieceDownBtn,
+  #pieceUpBtn {
+    display:none;
+  }
+
+  #flipBtn {
+    display:none;
+  }
+
+  #pieceBtn {
+    display:none;
+  }
+
+  .back-btn,
+  .stage-hint-btn,
+  .stage-setting-btn {
+    width:44px;
+    min-width:44px;
+    height:44px;
+    padding:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    flex:0 0 44px;
+  }
+
+  .back-btn {
+    font-size:22px;
+  }
+
+  .stage-hint-btn,
+  .stage-setting-btn {
+    font-size:13px;
+  }
+
+  .stage-hint-btn img,
+  .stage-setting-btn img {
+    width:24px;
+    height:24px;
+    display:block;
+    object-fit:contain;
+    pointer-events:none;
+    filter:none;
+  }
+
+  body.light-theme .stage-hint-btn img,
+  body.light-theme .stage-setting-btn img {
+    filter:invert(1);
+  }
+
+  .piece-picker-wrap {
+    position:relative;
+    display:inline-flex;
+    justify-content:center;
+  }
+
+  .piece-menu {
+    position:absolute;
+    left:50%;
+    top:calc(100% + 8px);
+    transform:translateX(-50%);
+    z-index:100;
+    display:none;
+    width:148px;
+    max-height:238px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:8px;
+    border-radius:18px;
+    background:var(--menu-bg);
+    border:1px solid var(--panel-border);
+    box-shadow:0 16px 36px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.16);
+    backdrop-filter:blur(14px);
+  }
+
+  .piece-menu.show {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .piece-option {
+    display:block;
+    width:100%;
+    min-width:0;
+    padding:8px 10px;
+    border-radius:14px;
+    font-size:13px;
+    line-height:1.1;
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  .piece-option.active {
+    background:linear-gradient(180deg, rgba(94,212,255,.42), rgba(40,116,255,.22));
+    border-color:rgba(144,212,255,.52);
+  }
+
+  .piece-option.locked,
+  .piece-option:disabled {
+    opacity:.42;
+    cursor:not-allowed;
+    filter:saturate(.65);
+  }
+
+  .piece-option.locked:active,
+  .piece-option:disabled:active {
+    transform:none;
+  }
+
+  button {
+    border:1px solid rgba(255,255,255,.66);
+    border-radius:999px;
+    padding:10px 15px;
+    font-weight:900;
+    color:var(--button-ink);
+    background:var(--button-bg);
+    box-shadow:var(--button-shadow);
+    cursor:pointer;
+  }
+
+  button:active {
+    transform:translateY(2px);
+    box-shadow:
+      0 4px 10px rgba(38,105,145,.18),
+      inset 0 1px rgba(255,255,255,.9);
+  }
+
+  .primary {
+    background:var(--primary-bg);
+  }
+
+  .stage-card {
+    position:relative;
+    z-index:1;
+    flex:0 0 auto;
+    height:min(62vh, 560px);
+    min-height:500px;
+    border-radius:30px;
+    overflow:hidden;
+    background:var(--stage-bg);
+  }
+
+  #game {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+    cursor:grab;
+  }
+
+  #game.grabbing { cursor:grabbing; }
+
+  .status {
+    display:none;
+  }
+
+  .xp-panel {
+    position:relative;
+    flex:1 1 auto;
+    min-width:0;
+    width:auto;
+    margin:0;
+    padding:8px 10px 9px;
+    border-radius:18px;
+    background:var(--xp-bg);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 10px 25px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.12);
+    pointer-events:auto;
+    cursor:pointer;
+    backdrop-filter:blur(10px);
+  }
+
+  .xp-panel .piece-picker-wrap {
+    position:static;
+    display:block;
+  }
+
+  .xp-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:6px;
+    font-size:11px;
+    font-weight:950;
+    color:var(--ink);
+  }
+
+  .xp-label {
+    display:none;
+  }
+
+  .xp-value {
+    white-space:nowrap;
+    opacity:.78;
+    margin-left:auto;
+  }
+
+  .xp-track {
+    position:relative;
+    height:12px;
+    border-radius:999px;
+    overflow:hidden;
+    background:var(--xp-track-bg);
+    border:1px solid rgba(93,179,255,.34);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.28);
+  }
+
+  .xp-fill {
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, rgba(87,184,255,.92), rgba(104,231,202,.92), rgba(255,255,255,.78));
+    box-shadow:0 0 14px rgba(87,184,255,.38), inset 0 1px rgba(255,255,255,.72);
+    transition:width .38s ease;
+  }
+
+  .side-panel {
+    display:none;
+    position:absolute;
+    right:12px;
+    bottom:12px;
+    width:164px;
+    padding:10px;
+    border-radius:22px;
+    background:rgba(4,12,28,.64);
+    border:1px solid rgba(144,212,255,.24);
+    box-shadow:0 14px 30px rgba(0,0,0,.30), inset 0 1px rgba(255,255,255,.16);
+    backdrop-filter:blur(12px);
+  }
+
+  body.light-theme .side-panel {
+    background:rgba(255,255,255,.54);
+    border-color:rgba(255,255,255,.72);
+    box-shadow:0 14px 30px rgba(88,140,170,.12), inset 0 1px rgba(255,255,255,.88);
+  }
+
+  .panel-title {
+    font-size:12px;
+    font-weight:950;
+    text-align:center;
+    opacity:.74;
+    margin-bottom:6px;
+  }
+
+  .mini-row {
+    display:flex;
+    gap:6px;
+    justify-content:center;
+    margin-top:8px;
+  }
+
+  .mini-row button {
+    padding:8px 10px;
+    min-width:46px;
+  }
+  
+  #answerCanvas {
+    width:144px;
+    height:116px;
+    display:block;
+  }
+
+  .hint {
+    display:none;
+  }
+
+  .clear-popup {
+    position:absolute;
+    inset:0;
+    z-index:5;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    background:rgba(2,7,19,.44);
+    backdrop-filter:blur(4px);
+  }
+
+  body.light-theme .clear-popup {
+    background:rgba(170,215,240,.16);
+  }
+
+  .clear-popup.show { display:flex; }
+
+  .clear-popup.rank-up .clear-card {
+    position:relative;
+    overflow:hidden;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,255,255,.68), transparent 36%),
+      radial-gradient(circle at 15% 25%, rgba(255,255,255,.34), transparent 30%),
+      linear-gradient(145deg, rgba(255,221,91,.95), rgba(255,153,86,.78));
+    border-color:rgba(255,255,255,.88);
+    box-shadow:
+      0 24px 64px rgba(255,180,70,.36),
+      0 0 36px rgba(255,234,130,.46),
+      inset 0 1px rgba(255,255,255,.88);
+  }
+
+  .clear-popup.rank-up .clear-card::before,
+  .clear-popup.rank-up .clear-card::after {
+    content:"⬢";
+    position:absolute;
+    color:rgba(255,255,255,.62);
+    font-size:22px;
+    line-height:1;
+    pointer-events:none;
+    animation:rankHexPop 1.15s ease-out both;
+  }
+
+  .clear-popup.rank-up .clear-card::before {
+    left:24px;
+    top:22px;
+  }
+
+  .clear-popup.rank-up .clear-card::after {
+    right:25px;
+    bottom:22px;
+    animation-delay:.08s;
+  }
+
+  .clear-popup.rank-up .clear-title {
+    color:#fff;
+    text-shadow:0 3px 12px rgba(160,88,0,.34), 0 0 18px rgba(255,255,255,.42);
+  }
+
+  .clear-popup.rank-up .clear-text {
+    color:#fff;
+    opacity:.96;
+    text-shadow:0 2px 8px rgba(160,88,0,.28);
+  }
+
+  .clear-popup.rank-up .clear-next {
+    border-color:rgba(255,255,255,.86);
+    background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,244,190,.72));
+    color:#9a5a00;
+    box-shadow:0 9px 20px rgba(170,95,0,.18), inset 0 1px rgba(255,255,255,.95);
+  }
+
+  .xp-panel.rank-flash {
+    animation:rankXpFlash .90s ease-out both;
+  }
+
+  .clear-popup.show::before {
+    content:"";
+    position:absolute;
+    inset:-40%;
+    background:linear-gradient(
+      115deg,
+      transparent 38%,
+      rgba(255,255,255,.72) 48%,
+      rgba(190,235,255,.95) 52%,
+      transparent 62%
+    );
+    transform:translateX(-70%);
+    animation:glassSweep .95s ease-out .12s both;
+    pointer-events:none;
+  }
+
+  .clear-card {
+    min-width:245px;
+    padding:25px 26px 22px;
+    border-radius:28px;
+    text-align:center;
+    background:rgba(4,12,28,.78);
+    border:1px solid rgba(144,212,255,.24);
+    box-shadow:0 22px 54px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.16);
+    animation:pop .25s ease-out both;
+    pointer-events:auto;
+  }
+
+  body.light-theme .clear-card {
+    background:rgba(255,255,255,.82);
+    border-color:rgba(255,255,255,.84);
+    box-shadow:0 22px 54px rgba(88,140,170,.16), inset 0 1px rgba(255,255,255,.92);
+  }
+
+  .clear-title {
+    font-size:32px;
+    font-weight:1000;
+    line-height:1;
+    margin-bottom:8px;
+  }
+
+  .clear-text {
+    font-size:13px;
+    font-weight:850;
+    opacity:.76;
+  }
+
+  .clear-next {
+    margin-top:16px;
+  }
+
+  @keyframes rankHexPop {
+    0% { transform:scale(.40) rotate(0deg); opacity:0; }
+    35% { transform:scale(1.18) rotate(12deg); opacity:.92; }
+    100% { transform:scale(.92) rotate(28deg); opacity:.48; }
+  }
+
+  @keyframes rankXpFlash {
+    0% {
+      box-shadow:0 10px 25px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.12);
+      transform:scale(1);
+    }
+    35% {
+      box-shadow:0 0 0 3px rgba(255,234,130,.72), 0 0 30px rgba(255,200,80,.62), inset 0 1px rgba(255,255,255,.90);
+      transform:scale(1.025);
+    }
+    100% {
+      box-shadow:0 10px 25px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.12);
+      transform:scale(1);
+    }
+  }
+
+  @keyframes pop {
+    from { transform:scale(.84); opacity:0; }
+    to { transform:scale(1); opacity:1; }
+  }
+
+  @keyframes glassSweep {
+    from { transform:translateX(-72%); opacity:0; }
+    18% { opacity:.95; }
+    to { transform:translateX(72%); opacity:0; }
+  }
+
+  @media (max-width:540px) {
+    .app { padding:9px 7px 16px; }
+    .stage-card {
+      flex:0 0 550px;
+      height:550px;
+      min-height:550px;
+    }
+    .side-panel {
+      width:138px;
+      right:8px;
+      bottom:8px;
+    }
+    #answerCanvas {
+      width:118px;
+      height:96px;
+    }
+    button {
+      padding:9px 12px;
+      font-size:13px;
+    }
+    .top-card {
+      border-radius:22px;
+      padding:8px;
+    }
+    .toolbar {
+      gap:6px;
+    }
+    .back-btn,
+    .stage-hint-btn,
+    .stage-setting-btn {
+      width:40px;
+      min-width:40px;
+      height:40px;
+      border-radius:50%;
+      flex-basis:40px;
+    }
+    .stage-hint-btn img,
+    .stage-setting-btn img {
+      width:23px;
+      height:23px;
+    }
+    .xp-panel {
+      width:100%;
+      padding:7px 9px 8px;
+    }
+    .xp-row {
+      font-size:10px;
+    }
+    .piece-menu {
+      width:136px;
+      max-height:190px;
+    }
+    .piece-option {
+      padding:8px 8px;
+      font-size:12px;
+    }
+  }
+</style>
+</head>
+<body class="home-mode dark-theme">
+<div class="app">
+  <div class="home-screen" id="homeScreen">
+    <div class="home-card">
+      <h1>Hexa Fit</h1>
+      <div class="home-actions">
+        <button class="home-play primary" id="playBtn">Play</button>
+        <button class="home-settings-btn" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel">Setting</button>
+        <div class="settings-panel" id="settingsPanel" aria-hidden="true">
+          <div class="settings-title">Settings</div>
+          <div class="setting-row">
+            <div class="setting-label">Theme</div>
+            <div class="seg-switch" id="themeSwitch" data-value="dark" role="group" aria-label="Theme">
+              <button class="seg-btn active" id="lightModeBtn" data-theme="light">Light</button>
+              <button class="seg-btn" id="darkModeBtn" data-theme="dark">Dark</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Sound</div>
+            <div class="seg-switch" id="soundSwitch" data-value="on" role="group" aria-label="Sound">
+              <button class="seg-btn active" id="soundOnBtn" data-sound="on">On</button>
+              <button class="seg-btn" id="soundOffBtn" data-sound="off">Off</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="top-card game-screen">
+    <div class="desc">
+      正六角形5個からなる基本ピースを自動列挙 / 回転・反転同一視 / ドラッグで移動 / タップで60°回転 / Flipで反転
+    </div>
+    <div class="toolbar">
+      <button class="back-btn" id="backBtn" aria-label="Back to Home">←</button>
+      <div class="xp-panel" id="xpPanel" role="button" aria-label="Select pieces">
+        <div class="xp-row">
+          <span class="xp-label" id="xpLabel"></span>
+          <span class="xp-value" id="xpValue">0 / 90 XP</span>
+        </div>
+        <div class="xp-track">
+          <div class="xp-fill" id="xpFill"></div>
+        </div>
+        <div class="piece-picker-wrap">
+          <button id="pieceBtn">3 Pieces</button>
+          <div class="piece-menu" id="pieceMenu"></div>
+        </div>
+      </div>
+      <button class="stage-hint-btn" id="hintBtn" aria-label="Hint"><img src="images/hint.png" alt="" /></button>
+      <button class="stage-setting-btn" id="gameSettingsBtn" aria-label="Setting" aria-expanded="false" aria-controls="gameSettingsPanel"><img src="images/setting.png" alt="" /></button>
+      <button id="newBtn" class="primary">New Puzzle</button>
+      <button id="pieceDownBtn">Pieces -</button>
+      <button id="pieceUpBtn">Pieces +</button>
+      <button id="flipBtn">Flip Selected</button>
+    </div>
+  </div>
+
+  <div class="settings-panel game-settings-panel game-screen" id="gameSettingsPanel" aria-hidden="true">
+    <div class="settings-title">Settings</div>
+    <div class="setting-row">
+      <div class="setting-label">Theme</div>
+      <div class="seg-switch" id="gameThemeSwitch" data-value="dark" role="group" aria-label="Theme">
+        <button class="seg-btn active" id="gameLightModeBtn" data-theme="light">Light</button>
+        <button class="seg-btn" id="gameDarkModeBtn" data-theme="dark">Dark</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Sound</div>
+      <div class="seg-switch" id="gameSoundSwitch" data-value="on" role="group" aria-label="Sound">
+        <button class="seg-btn active" id="gameSoundOnBtn" data-sound="on">On</button>
+        <button class="seg-btn" id="gameSoundOffBtn" data-sound="off">Off</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card game-screen" id="stageCard">
+    <canvas id="game"></canvas>
+    <div class="status" id="status">生成中...</div>
+
+
+    <div class="side-panel" style="display:none;">
+      <div class="panel-title">ANSWER</div>
+      <canvas id="answerCanvas"></canvas>
+      <div class="mini-row">
+        <button id="answerBtn">Hide</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="hint">
+      パズルを解くとXPを獲得します。高ピース数ほどXPが多く、XPに応じて最大ピース数が解放されます。
+    </div>
+
+    <div class="clear-popup" id="clearPopup">
+      <div class="clear-card">
+        <div class="clear-title">Clear!</div>
+        <div class="clear-text" id="clearText">完成しました</div>
+        <button class="clear-next primary" id="nextBtn">Next Puzzle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  let ctx = canvas.getContext("2d");
+  const answerCanvas = document.getElementById("answerCanvas");
+  const ansCtx = answerCanvas.getContext("2d");
+  const playBtn = document.getElementById("playBtn");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const gameSettingsBtn = document.getElementById("gameSettingsBtn");
+  const settingsPanel = document.getElementById("settingsPanel");
+  const gameSettingsPanel = document.getElementById("gameSettingsPanel");
+  const lightModeBtn = document.getElementById("lightModeBtn");
+  const darkModeBtn = document.getElementById("darkModeBtn");
+  const themeSwitch = document.getElementById("themeSwitch");
+  const soundOnBtn = document.getElementById("soundOnBtn");
+  const soundOffBtn = document.getElementById("soundOffBtn");
+  const soundSwitch = document.getElementById("soundSwitch");
+  const gameLightModeBtn = document.getElementById("gameLightModeBtn");
+  const gameDarkModeBtn = document.getElementById("gameDarkModeBtn");
+  const gameThemeSwitch = document.getElementById("gameThemeSwitch");
+  const gameSoundOnBtn = document.getElementById("gameSoundOnBtn");
+  const gameSoundOffBtn = document.getElementById("gameSoundOffBtn");
+  const gameSoundSwitch = document.getElementById("gameSoundSwitch");
+  const backBtn = document.getElementById("backBtn");
+  const stageCard = document.getElementById("stageCard");
+  const statusEl = document.getElementById("status");
+  const xpPanel = document.getElementById("xpPanel");
+  const xpLabel = document.getElementById("xpLabel");
+  const xpValue = document.getElementById("xpValue");
+  const xpFill = document.getElementById("xpFill");
+  const clearPopup = document.getElementById("clearPopup");
+  const clearText = document.getElementById("clearText");
+  const clearTitle = document.querySelector(".clear-title");
+  const pieceMenu = document.getElementById("pieceMenu");
+
+  let W = 0, H = 0, dpr = 1;
+  let pieces = [];
+  let selected = null;
+  let drag = null;
+  let longPressTimer = null;
+  const LONG_PRESS_MS = 520;
+  const PLAYER_STATE_KEY = "hexaGlassPlayerState";
+  const PUZZLE_STATE_KEY = "hexaGlassPuzzleByPieceCount";
+  const THEME_STATE_KEY = "hexaGlassTheme";
+  const SOUND_STATE_KEY = "hexaGlassSoundEnabled";
+  const DISABLE_PUZZLE_PERSISTENCE_FOR_TESTING = false;
+  function isMobileRenderDevice() {
+    return window.innerWidth <= 540 || window.matchMedia?.("(pointer: coarse)")?.matches;
+  }
+  const renderFeatureFlags = {
+    mineralTexture: !isMobileRenderDevice(),
+    hotReflection: true,
+    flashOverlay: true,
+    ghostGradient: true
+  };
+  const PIECE_SELECT_MIN = 3;
+  const PIECE_SELECT_MAX = 20;
+  let playerState = null;
+  let selectedPieceCount = 3;
+  let showAnswer = true;
+  let hasCleared = false;
+  let hintPieceId = null;
+  let hintUseCount = 0;
+  const hintedPieceIds = new Set();
+  let animFrame = null;
+
+
+  let dragLayerCanvas = null;
+  let dragLayerCtx = null;
+  let dragLayerReady = false;
+  let dragLayerPiece = null;
+
+
+  const drawDebugStats = {
+    fullDraw: 0,
+    dragDraw: 0,
+    buildDragLayer: 0,
+    lastFullDrawAt: 0,
+    lastDragDrawAt: 0,
+    reset() {
+      this.fullDraw = 0;
+      this.dragDraw = 0;
+      this.buildDragLayer = 0;
+      this.lastFullDrawAt = 0;
+      this.lastDragDrawAt = 0;
+    }
+  };
+
+  const renderPerfStats = {
+    fullDrawMs: 0,
+    maxFullDrawMs: 0,
+    selectedPulseMs: 0,
+    maxSelectedPulseMs: 0,
+    dragFrameMs: 0,
+    maxDragFrameMs: 0,
+    drawPieceCalls: 0,
+    drawnHexCells: 0,
+    actionAnimationFrames: 0,
+    selectedPulseFrames: 0,
+    dragFrames: 0,
+    staticLayerBuildMs: 0,
+    maxStaticLayerBuildMs: 0,
+    staticLayerBuilds: 0,
+    reset() {
+      this.fullDrawMs = 0;
+      this.maxFullDrawMs = 0;
+      this.selectedPulseMs = 0;
+      this.maxSelectedPulseMs = 0;
+      this.dragFrameMs = 0;
+      this.maxDragFrameMs = 0;
+      this.drawPieceCalls = 0;
+      this.drawnHexCells = 0;
+      this.actionAnimationFrames = 0;
+      this.selectedPulseFrames = 0;
+      this.dragFrames = 0;
+      this.staticLayerBuildMs = 0;
+      this.maxStaticLayerBuildMs = 0;
+      this.staticLayerBuilds = 0;
+    }
+  };
+
+  const functionPerfStats = {
+    enabled: true,
+    data: Object.create(null),
+    reset() {
+      this.data = Object.create(null);
+    },
+    measure(name, fn) {
+      if (!this.enabled) return fn();
+      const start = performance.now();
+      try {
+        return fn();
+      } finally {
+        const ms = performance.now() - start;
+        const stat = this.data[name] || (this.data[name] = {
+          calls: 0,
+          totalMs: 0,
+          maxMs: 0,
+          minMs: Infinity
+        });
+        stat.calls++;
+        stat.totalMs += ms;
+        stat.maxMs = Math.max(stat.maxMs, ms);
+        stat.minMs = Math.min(stat.minMs, ms);
+      }
+    },
+    summary() {
+      const rows = Object.entries(this.data).map(([name, stat]) => ({
+        name,
+        calls: stat.calls,
+        totalMs: Number(stat.totalMs.toFixed(3)),
+        avgMs: Number((stat.totalMs / Math.max(1, stat.calls)).toFixed(4)),
+        maxMs: Number(stat.maxMs.toFixed(3)),
+        minMs: Number((stat.minMs === Infinity ? 0 : stat.minMs).toFixed(4))
+      }));
+      rows.sort((a, b) => b.totalMs - a.totalMs);
+      return rows;
+    },
+    log() {
+      const rows = this.summary();
+      console.table(rows);
+      return rows;
+    }
+  };
+
+
+  const interactionPerfStats = {
+    data: [],
+    lastPointerDownAt: 0,
+    lastPointerMoveAt: 0,
+    lastPointerUpAt: 0,
+    lastRotateCommandAt: 0,
+    reset() {
+      this.data = [];
+      this.lastPointerDownAt = 0;
+      this.lastPointerMoveAt = 0;
+      this.lastPointerUpAt = 0;
+      this.lastRotateCommandAt = 0;
+    },
+    mark(name, start) {
+      const now = performance.now();
+      this.data.push({
+        name,
+        ms: Number((now - start).toFixed(3)),
+        at: Number(now.toFixed(1))
+      });
+      if (this.data.length > 400) this.data.shift();
+    },
+    summary() {
+      const grouped = new Map();
+      for (const row of this.data) {
+        const stat = grouped.get(row.name) || {
+          name: row.name,
+          calls: 0,
+          totalMs: 0,
+          maxMs: 0,
+          minMs: Infinity
+        };
+        stat.calls++;
+        stat.totalMs += row.ms;
+        stat.maxMs = Math.max(stat.maxMs, row.ms);
+        stat.minMs = Math.min(stat.minMs, row.ms);
+        grouped.set(row.name, stat);
+      }
+      const rows = [...grouped.values()].map(stat => ({
+        name: stat.name,
+        calls: stat.calls,
+        totalMs: Number(stat.totalMs.toFixed(3)),
+        avgMs: Number((stat.totalMs / Math.max(1, stat.calls)).toFixed(3)),
+        maxMs: Number(stat.maxMs.toFixed(3)),
+        minMs: Number((stat.minMs === Infinity ? 0 : stat.minMs).toFixed(3))
+      }));
+      rows.sort((a, b) => b.maxMs - a.maxMs || b.totalMs - a.totalMs);
+      return rows;
+    },
+    log() {
+      const rows = this.summary();
+      console.table(rows);
+      return rows;
+    },
+    recent(limit = 60) {
+      const rows = this.data.slice(-limit);
+      console.table(rows);
+      return rows;
+    }
+  };
+
+
+
+  const SQRT3 = Math.sqrt(3);
+  const HEX_DIRS = [
+    [1, 0], [1, -1], [0, -1],
+    [-1, 0], [-1, 1], [0, 1]
+  ];
+
+  const COLORS = [
+    ["#00c8ff", "#b9f7ff"],
+    ["#ff227d", "#ffb2dd"],
+    ["#9d2fff", "#e2b8ff"],
+    ["#2874ff", "#b8d2ff"],
+    ["#5be321", "#c8ff8d"],
+    ["#ffd22b", "#fff0a0"]
+  ];
+
+  const SOUND_FILES = {
+    pick: "sound/pick6.mp3",
+    put: "sound/put6.mp3",
+    flip: "sound/flip.mp3",
+    clear: "sound/clear.mp3",
+    rankup: "sound/rankup.mp3"
+  };
+
+  const soundPool = Object.fromEntries(
+    Object.entries(SOUND_FILES).map(([key, src]) => [key, Array.from({ length: 3 }, () => {
+      const audio = new Audio(src);
+      audio.preload = "auto";
+      audio.volume = .72;
+      return audio;
+    })])
+  );
+
+  const soundPoolIndex = Object.fromEntries(Object.keys(SOUND_FILES).map(key => [key, 0]));
+  let soundUnlocked = false;
+  let soundEnabled = localStorage.getItem(SOUND_STATE_KEY) !== "off";
+  let debugSoundsDisabled = false;
+
+  function unlockSounds() {
+    if (soundUnlocked) return;
+    soundUnlocked = true;
+    for (const pool of Object.values(soundPool)) {
+      for (const audio of pool) audio.load();
+    }
+  }
+
+  function playSound(name) {
+    if (debugSoundsDisabled || !soundEnabled) return;
+    const pool = soundPool[name];
+    if (!pool || !pool.length) return;
+
+    const index = soundPoolIndex[name] || 0;
+    const audio = pool[index % pool.length];
+    soundPoolIndex[name] = (index + 1) % pool.length;
+
+    try {
+      audio.currentTime = 0;
+      const result = audio.play();
+      if (result && typeof result.catch === "function") result.catch(() => {});
+    } catch (err) {}
+  }
+
+  function installSoundDebugApi() {
+    if (!window.__hexaPuzzleDebug) window.__hexaPuzzleDebug = {};
+    Object.assign(window.__hexaPuzzleDebug, {
+      disableSounds() {
+        debugSoundsDisabled = true;
+        console.log("[debug] sounds disabled");
+        return debugSoundsDisabled;
+      },
+      enableSounds() {
+        debugSoundsDisabled = false;
+        console.log("[debug] sounds enabled");
+        return debugSoundsDisabled;
+      },
+      soundDisabled() {
+        return debugSoundsDisabled;
+      },
+      soundEnabled() {
+        return soundEnabled;
+      }
+    });
+  }
+
+  window.addEventListener("load", installSoundDebugApi);
+  queueMicrotask(installSoundDebugApi);
+
+  // Debug API for theme redraw and drag layer cache
+  function installThemeRedrawDebugApi() {
+    if (!window.__hexaPuzzleDebug) window.__hexaPuzzleDebug = {};
+    Object.assign(window.__hexaPuzzleDebug, {
+      forceThemeRedraw() {
+        clearDragStaticLayer();
+        if (ctx && W && H) ctx.clearRect(0, 0, W, H);
+        draw();
+        if (showAnswer) drawAnswer();
+        requestDrawLoop();
+        console.log("[debug] forced theme redraw");
+        return true;
+      },
+      clearDragLayerCache() {
+        clearDragStaticLayer();
+        console.log("[debug] drag/static layer cache cleared");
+        return true;
+      },
+      drawStatsSummary() {
+        return { ...drawDebugStats };
+      },
+      renderPerfSummary() {
+        return { ...renderPerfStats };
+      }
+    });
+  }
+
+  window.addEventListener("load", installThemeRedrawDebugApi);
+  queueMicrotask(installThemeRedrawDebugApi);
+
+
+  const CLEAR_MESSAGES = [
+    "Perfect Fit!",
+    "Nice Solve!",
+    "Great Move!",
+    "Crystal Clear!",
+    "Well Done!",
+    "Beautiful!"
+  ];
+
+  function axialKey(c) { return `${c.q},${c.r}`; }
+  function parseKey(k) {
+    const [q, r] = k.split(",").map(Number);
+    return { q, r };
+  }
+
+  function axialAdd(a, b) { return { q:a.q + b[0], r:a.r + b[1] }; }
+
+  function rotateCell60(c) {
+    // cube: x=q, z=r, y=-x-z; rotate left 60: (x,y,z)->(-z,-x,-y)
+    return { q: -c.r, r: c.q + c.r };
+  }
+
+  function rotateCells(cells, times) {
+    let out = cells.map(c => ({ q:c.q, r:c.r }));
+    for (let t = 0; t < times; t++) out = out.map(rotateCell60);
+    return out;
+  }
+
+  function reflectCell(c) {
+    // mirror across q-axis in axial/cube coordinates.
+    return { q: c.q + c.r, r: -c.r };
+  }
+
+  function reflectCells(cells) {
+    return cells.map(reflectCell);
+  }
+
+  function normalizeCells(cells) {
+    let minQ = Math.min(...cells.map(c => c.q));
+    let minR = Math.min(...cells.map(c => c.r));
+    const shifted = cells.map(c => ({ q:c.q - minQ, r:c.r - minR }));
+    shifted.sort((a,b) => a.q === b.q ? a.r - b.r : a.q - b.q);
+    return shifted;
+  }
+
+  function cellsSignature(cells) {
+    return normalizeCells(cells).map(axialKey).join(";");
+  }
+
+  function canonicalSignature(cells, allowReflect = true) {
+    const variants = [];
+    for (let f = 0; f < (allowReflect ? 2 : 1); f++) {
+      const base = f ? reflectCells(cells) : cells;
+      for (let r = 0; r < 6; r++) {
+        variants.push(cellsSignature(rotateCells(base, r)));
+      }
+    }
+    variants.sort();
+    return variants[0];
+  }
+
+  function generatePentahexes() {
+    let shapes = [[{ q:0, r:0 }]];
+    for (let size = 2; size <= 5; size++) {
+      const map = new Map();
+      for (const shape of shapes) {
+        const occupied = new Set(shape.map(axialKey));
+        for (const cell of shape) {
+          for (const d of HEX_DIRS) {
+            const next = axialAdd(cell, d);
+            const key = axialKey(next);
+            if (occupied.has(key)) continue;
+            const candidate = [...shape, next];
+            const sig = canonicalSignature(candidate, true);
+            if (!map.has(sig)) map.set(sig, normalizeCells(candidate));
+          }
+        }
+      }
+      shapes = [...map.values()];
+    }
+    return shapes.map((cells, i) => ({
+      id:i,
+      cells: normalizeCells(cells),
+      signature: canonicalSignature(cells, true),
+      symmetry: detectPieceSymmetry(cells)
+    }));
+  }
+
+  function detectPieceSymmetry(cells) {
+    const base = canonicalSignature(cells, false);
+    const angles = [];
+    for (let r = 0; r < 6; r++) {
+      if (cellsSignature(rotateCells(cells, r)) === base) angles.push(r);
+    }
+    return angles.length ? angles : [0];
+  }
+
+  const PENTAS = generatePentahexes();
+
+  if (DISABLE_PUZZLE_PERSISTENCE_FOR_TESTING) {
+    try { localStorage.removeItem(PUZZLE_STATE_KEY); } catch (err) {}
+  }
+
+  function axialToPixel(cell, size) {
+    return {
+      x: size * SQRT3 * (cell.q + cell.r / 2),
+      y: size * 1.5 * cell.r
+    };
+  }
+
+  function isMobileLayout() {
+    return W <= 540;
+  }
+
+  function getLayoutZones() {
+    if (isMobileLayout()) {
+      return {
+        boardCenterX: W / 2,
+        boardCenterY: Math.max(120, H * .27),
+        boardW: Math.min(W * .94, 620),
+        boardH: Math.min(H * .52, 390),
+        pieceCenterX: W / 2,
+        pieceCenterY: H * .79,
+        pieceW: Math.min(W * .78, 430),
+        pieceH: Math.min(H * .20, 160)
+      };
+    }
+
+    return {
+      boardCenterX: W * .70,
+      boardCenterY: Math.max(135, H * .40),
+      boardW: Math.min(W * .56, 560),
+      boardH: Math.min(H * .78, 520),
+      pieceCenterX: W * .22,
+      pieceCenterY: Math.max(190, H * .53),
+      pieceW: Math.min(W * .32, 300),
+      pieceH: Math.min(H * .52, 320)
+    };
+  }
+
+  function pixelToAxial(x, y, size) {
+    const q = (SQRT3 / 3 * x - 1 / 3 * y) / size;
+    const r = (2 / 3 * y) / size;
+    return roundAxial(q, r);
+  }
+
+  function roundAxial(q, r) {
+    let x = q;
+    let z = r;
+    let y = -x - z;
+    let rx = Math.round(x);
+    let ry = Math.round(y);
+    let rz = Math.round(z);
+
+    const xDiff = Math.abs(rx - x);
+    const yDiff = Math.abs(ry - y);
+    const zDiff = Math.abs(rz - z);
+
+    if (xDiff > yDiff && xDiff > zDiff) rx = -ry - rz;
+    else if (yDiff > zDiff) ry = -rx - rz;
+    else rz = -rx - ry;
+
+    return { q:rx, r:rz };
+  }
+
+  function gridBoundsFromCells(cells) {
+    const px = cells.map(c => axialToPixel(c, 1));
+    return {
+      minX:Math.min(...px.map(p=>p.x)),
+      maxX:Math.max(...px.map(p=>p.x)),
+      minY:Math.min(...px.map(p=>p.y)),
+      maxY:Math.max(...px.map(p=>p.y))
+    };
+  }
+
+  function transformedCells(piece, useTarget = false) {
+    const src = piece.flippedForDraw(useTarget)
+      ? reflectCells(piece.baseCells)
+      : piece.baseCells.map(c => ({ q:c.q, r:c.r }));
+    const rotated = rotateCells(src, useTarget ? piece.targetRot : piece.rot);
+    const origin = useTarget ? piece.targetOrigin : piece.origin;
+    return rotated.map(c => ({ q:c.q + origin.q, r:c.r + origin.r }));
+  }
+
+  function localHexCentersAroundCentroid(baseCells, rot, flip, size) {
+    const orientedCells = placementCells(baseCells, rot, flip);
+    const pts = orientedCells.map(c => axialToPixel(c, size));
+    const centroid = pts.reduce((acc, p) => {
+      acc.x += p.x;
+      acc.y += p.y;
+      return acc;
+    }, { x:0, y:0 });
+    centroid.x /= pts.length;
+    centroid.y /= pts.length;
+
+    return pts.map(p => ({
+      x: p.x - centroid.x,
+      y: p.y - centroid.y
+    }));
+  }
+
+  function transformedLocalHexCenters(piece, useTarget = false, size = piece.hexSize) {
+    return localHexCentersAroundCentroid(
+      piece.baseCells,
+      useTarget ? piece.targetRot : piece.rot,
+      useTarget ? piece.targetFlip : piece.flip,
+      size
+    );
+  }
+
+  function orientedCellsForPiece(piece, useTarget = false) {
+    const flip = useTarget ? piece.targetFlip : piece.flip;
+    const rot = useTarget ? piece.targetRot : piece.rot;
+    return placementCells(piece.baseCells, rot, flip);
+  }
+
+  function orientedCentroidOffset(piece, useTarget = false, size = piece.hexSize) {
+    const cells = orientedCellsForPiece(piece, useTarget);
+    const pts = cells.map(c => axialToPixel(c, size));
+    const centroid = pts.reduce((acc, p) => {
+      acc.x += p.x;
+      acc.y += p.y;
+      return acc;
+    }, { x:0, y:0 });
+    centroid.x /= pts.length;
+    centroid.y /= pts.length;
+    return centroid;
+  }
+
+  function pieceCenterForGridOrigin(piece, origin, useTarget = false, size = piece.hexSize) {
+    const originPx = axialToPixel(origin, size);
+    const centroid = orientedCentroidOffset(piece, useTarget, size);
+    return {
+      x: piece.targetX + originPx.x + centroid.x,
+      y: piece.targetY + originPx.y + centroid.y
+    };
+  }
+
+  function hexPath(g, cx, cy, size) {
+    g.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 6 + i * Math.PI / 3;
+      const x = cx + Math.cos(a) * size;
+      const y = cy + Math.sin(a) * size;
+      if (i === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.closePath();
+  }
+
+  function isDarkTheme() {
+    return document.body.classList.contains("dark-theme");
+  }
+
+  function hexToRgb(hex) {
+    if (typeof hex !== "string" || !hex.startsWith("#")) return null;
+    const raw = hex.slice(1);
+    if (raw.length !== 6) return null;
+    const value = Number.parseInt(raw, 16);
+    if (!Number.isFinite(value)) return null;
+    return {
+      r: (value >> 16) & 255,
+      g: (value >> 8) & 255,
+      b: value & 255
+    };
+  }
+
+  function mixHexWithWhite(hex, amount = .55) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    const mix = v => Math.round(v + (255 - v) * amount);
+    return `rgb(${mix(rgb.r)},${mix(rgb.g)},${mix(rgb.b)})`;
+  }
+
+  function getThemeAdjustedCellColors(fillA, fillB, outOfBoard = false) {
+    if (outOfBoard || isDarkTheme()) {
+      return { fillA, fillB };
+    }
+    return {
+      fillA: mixHexWithWhite(fillA, .30),
+      fillB: mixHexWithWhite(fillB, .14)
+    };
+  }
+
+  function drawHexCell(g, cx, cy, size, fillA, fillB, ghost = false, selectedCell = false, outOfBoard = false) {
+    return functionPerfStats.measure(ghost ? "drawHexCell:ghost" : "drawHexCell:piece", () => {
+      if (ghost) {
+        g.save();
+        const darkTheme = isDarkTheme();
+        if (!renderFeatureFlags.ghostGradient) {
+          hexPath(g, cx, cy, size * .96);
+          g.fillStyle = darkTheme ? "rgba(255,255,255,.13)" : "rgba(255,255,255,.16)";
+          g.fill();
+          hexPath(g, cx, cy, size * .97);
+          g.lineWidth = darkTheme ? 1.2 : 1.2;
+          g.strokeStyle = darkTheme ? "rgba(144,212,255,.26)" : "rgba(255,255,255,.28)";
+          g.stroke();
+          g.restore();
+          return;
+        }
+        const ghostGrad = g.createLinearGradient(cx - size, cy - size, cx + size, cy + size);
+        if (darkTheme) {
+          ghostGrad.addColorStop(0, "rgba(255,255,255,.18)");
+          ghostGrad.addColorStop(.55, "rgba(93,179,255,.12)");
+          ghostGrad.addColorStop(1, "rgba(4,14,32,.18)");
+        } else {
+          ghostGrad.addColorStop(0, "rgba(255,255,255,.24)");
+          ghostGrad.addColorStop(.55, "rgba(70,132,180,.13)");
+          ghostGrad.addColorStop(1, "rgba(8,38,70,.20)");
+        }
+        hexPath(g, cx, cy, size * .96);
+        g.fillStyle = ghostGrad;
+        g.fill();
+        hexPath(g, cx, cy, size * .97);
+        g.lineWidth = darkTheme ? 1.25 : 1.4;
+        g.strokeStyle = darkTheme ? "rgba(144,212,255,.30)" : "rgba(255,255,255,.30)";
+        g.stroke();
+        g.restore();
+        return;
+      }
+
+      drawReferenceGlassHex(g, cx, cy, size, fillA, fillB, selectedCell, outOfBoard);
+    });
+  }
+
+  function drawRefinedOutOfBoardOverlay(g, cx, cy, size) {
+    return functionPerfStats.measure("drawRefinedOutOfBoardOverlay", () => {
+      hexPath(g, cx, cy, size * .89);
+      g.fillStyle = "rgba(255,72,72,.14)";
+      g.fill();
+
+      hexPath(g, cx, cy, size * .985);
+      g.lineWidth = Math.max(1.4, Math.min(2.4, size * .085));
+      g.strokeStyle = "rgba(255,72,72,.62)";
+      g.stroke();
+    });
+  }
+
+  function drawIconEditorGemHex(g, cx, cy, size, fillA, fillB, selectedCell, outOfBoard) {
+    const adjusted = getThemeAdjustedCellColors(fillA, fillB, outOfBoard);
+    const mainColor = outOfBoard ? "rgba(255,96,96,.58)" : adjusted.fillA;
+    const highlightColor = outOfBoard ? "rgba(255,225,225,.58)" : adjusted.fillB;
+    const bodyColor = outOfBoard ? mainColor : adjusted.fillA;
+    const lightTheme = !isDarkTheme();
+
+    // 1. Soft colored outer glow, matching the icon-editor gem cell.
+    g.shadowColor = mainColor;
+    g.shadowBlur = lightTheme ? 14 : 18;
+    hexPath(g, cx, cy, size * .97);
+    g.fillStyle = mainColor;
+    g.globalAlpha = lightTheme ? .25 : .28;
+    g.fill();
+    g.globalAlpha = 1;
+    g.shadowBlur = 0;
+
+    // 2. Main diagonal glass gradient: white highlight -> light color -> saturated color -> dark shade.
+    const grad = g.createLinearGradient(cx - size * .70, cy - size * .90, cx + size * .75, cy + size * .85);
+    grad.addColorStop(0, "rgba(255,255,255,.85)");
+    grad.addColorStop(.15, highlightColor);
+    grad.addColorStop(.48, bodyColor);
+    grad.addColorStop(.82, bodyColor);
+    grad.addColorStop(1, lightTheme ? "rgba(65,105,140,.28)" : "rgba(0,0,0,.34)");
+    hexPath(g, cx, cy, size * .90);
+    g.fillStyle = grad;
+    g.fill();
+
+    // 3. Small upper-left internal glass reflection.
+    const hot = g.createLinearGradient(cx - size * .65, cy - size * .75, cx + size * .25, cy + size * .12);
+    hot.addColorStop(0, "rgba(255,255,255,.86)");
+    hot.addColorStop(.40, "rgba(255,255,255,.22)");
+    hot.addColorStop(1, "rgba(255,255,255,0)");
+    hexPath(g, cx - size * .08, cy - size * .12, size * .45);
+    g.fillStyle = hot;
+    g.fill();
+
+    // 4. Stable sparkle particles. These use deterministic pseudo-random positions, not Math.random().
+    for (let i = 0; i < 16; i++) {
+      const px = cx + (Math.sin((cx + cy + i) * 12.989) * .5) * size * 1.05;
+      const py = cy + (Math.cos((cx - cy + i) * 7.31) * .5) * size * .90;
+      g.globalAlpha = lightTheme ? (.08 + (i % 4) * .022) : (.12 + (i % 4) * .035);
+      g.beginPath();
+      g.arc(px, py, size * (.018 + (i % 3) * .006), 0, Math.PI * 2);
+      g.fillStyle = "#fff";
+      g.fill();
+    }
+    g.globalAlpha = 1;
+
+    // 5. Strong colored outer rim.
+    // Scale the rim with cell size so small 20-piece cells do not look over-outlined.
+    hexPath(g, cx, cy, size * .965);
+    const outerRimWidth = Math.max(
+      lightTheme ? 1.45 : 1.60,
+      Math.min(
+        lightTheme ? 3.0 : 3.2,
+        size * (lightTheme ? .095 : .105)
+      )
+    );
+    g.lineWidth = outerRimWidth;
+    g.strokeStyle = mainColor;
+    g.stroke();
+
+    // 6. Clear white inner rim.
+    // Scale the white line with cell size so it stays subtle when many pieces make cells small.
+    hexPath(g, cx, cy, size * .78);
+    const innerRimMax = selectedCell
+      ? (lightTheme ? 1.25 : 1.45)
+      : (lightTheme ? 1.05 : 1.25);
+    const innerRimMin = lightTheme ? .48 : .56;
+    const innerRimWidth = Math.max(
+      innerRimMin,
+      Math.min(
+        innerRimMax,
+        size * (selectedCell ? .050 : .038)
+      )
+    );
+    g.lineWidth = innerRimWidth;
+    g.strokeStyle = selectedCell ? "rgba(255,255,255,.86)" : (lightTheme ? "rgba(255,255,255,.72)" : "rgba(255,255,255,.62)");
+    g.stroke();
+
+    if (outOfBoard) drawRefinedOutOfBoardOverlay(g, cx, cy, size);
+  }
+
+  function drawReferenceGlassHex(g, cx, cy, size, fillA, fillB, selectedCell, outOfBoard) {
+    return functionPerfStats.measure("drawReferenceGlassHex", () => {
+      g.save();
+      drawIconEditorGemHex(g, cx, cy, size, fillA, fillB, selectedCell, outOfBoard);
+      g.restore();
+    });
+  }
+
+  function drawPieceOuterHighlight(g, centers, localCells, size, pulse) {
+    if (!centers.length || centers.length !== localCells.length) return;
+
+    // The outer edge must be decided from the piece topology, not by comparing
+    // pixel coordinates. Adjacent hexes share a side, so that side is internal
+    // and must not be highlighted.
+    const cellKeys = new Set(localCells.map(axialKey));
+    const radius = size * .99;
+
+    // HEX_DIRS are axial neighbor directions for pointy-top hexes drawn by
+    // hexPath(): corner angles are 30, 90, 150, 210, 270, 330 degrees.
+    // Each pair below is the visible side facing the corresponding HEX_DIRS edge.
+    const edgeCornerPairs = [
+      [5, 0], // [ 1,  0] east
+      [4, 5], // [ 1, -1] north-east
+      [3, 4], // [ 0, -1] north-west
+      [2, 3], // [-1,  0] west
+      [1, 2], // [-1,  1] south-west
+      [0, 1]  // [ 0,  1] south-east
+    ];
+
+    const traceOuterEdges = () => {
+      g.beginPath();
+      for (let i = 0; i < localCells.length; i++) {
+        const cell = localCells[i];
+        const center = centers[i];
+        if (!center) continue;
+
+        for (let edge = 0; edge < 6; edge++) {
+          const dir = HEX_DIRS[edge];
+          const neighborKey = axialKey({ q:cell.q + dir[0], r:cell.r + dir[1] });
+          if (cellKeys.has(neighborKey)) continue;
+
+          const [cornerA, cornerB] = edgeCornerPairs[edge];
+          const a1 = Math.PI / 6 + cornerA * Math.PI / 3;
+          const a2 = Math.PI / 6 + cornerB * Math.PI / 3;
+          g.moveTo(center.x + Math.cos(a1) * radius, center.y + Math.sin(a1) * radius);
+          g.lineTo(center.x + Math.cos(a2) * radius, center.y + Math.sin(a2) * radius);
+        }
+      }
+    };
+
+    g.save();
+    g.lineCap = "round";
+    g.lineJoin = "round";
+
+    const darkTheme = isDarkTheme();
+    const glowColor = darkTheme ? "rgba(154,226,255,.70)" : "rgba(82,213,255,.86)";
+    const glowShadow = darkTheme ? "rgba(154,226,255,.88)" : "rgba(62,205,255,.78)";
+    const coreColor = darkTheme ? "rgba(239,252,255,.98)" : "rgba(226,250,255,.98)";
+    const coreShadow = darkTheme ? "rgba(154,226,255,.72)" : "rgba(91,221,255,.72)";
+
+    traceOuterEdges();
+    g.globalAlpha = darkTheme ? (.42 + pulse * .20) : (.68 + pulse * .20);
+    g.lineWidth = Math.max(5.0, size * .24);
+    g.strokeStyle = glowColor;
+    g.shadowColor = glowShadow;
+    g.shadowBlur = 18 + pulse * 10;
+    g.stroke();
+
+    traceOuterEdges();
+    g.globalAlpha = .98;
+    g.lineWidth = Math.max(2.2, size * .095);
+    g.strokeStyle = coreColor;
+    g.shadowColor = coreShadow;
+    g.shadowBlur = 8 + pulse * 5;
+    g.stroke();
+
+    g.restore();
+  }
+
+  function drawPiece(g, piece, opts = {}) {
+    return functionPerfStats.measure(opts.ghost ? "drawPiece:ghost" : opts.mini ? "drawPiece:mini" : opts.target ? "drawPiece:target" : "drawPiece:normal", () => {
+      renderPerfStats.drawPieceCalls++;
+      const useTarget = opts.target || false;
+      const ghost = opts.ghost || false;
+      const mini = opts.mini || false;
+      const drawSize = mini ? piece.miniHexSize : piece.hexSize;
+      const centers = transformedLocalHexCenters(piece, useTarget, drawSize);
+      renderPerfStats.drawnHexCells += centers.length;
+      const boardCells = opts.boardCells || null;
+      let pieceCells = null;
+      let shouldHighlightOutOfBoard = false;
+      let x = piece.x;
+      let y = piece.y;
+
+      if (useTarget) {
+        const targetCenter = pieceCenterForGridOrigin(piece, piece.targetOrigin, true, drawSize);
+        x = targetCenter.x;
+        y = targetCenter.y;
+      }
+
+      if (!useTarget && !ghost && !mini && boardCells && (!drag || drag.p !== piece)) {
+        pieceCells = centers.map(c => pixelToAxial(x + c.x - piece.targetX, y + c.y - piece.targetY, drawSize));
+        const pieceHasAnyBoardCell = pieceCells.some(c => boardCells.has(axialKey(c)));
+        const pieceHasAnyOutOfBoardCell = pieceCells.some(c => !boardCells.has(axialKey(c)));
+        shouldHighlightOutOfBoard = pieceHasAnyBoardCell && pieceHasAnyOutOfBoardCell;
+      }
+
+      // Movable-piece hint is transient: only the current hinted unsolved piece glows.
+      // Board-side hint is cumulative: every hinted target position remains marked.
+      const isPieceCorrectlyPlaced = !useTarget && !ghost && !mini
+        && piece.origin.q === piece.targetOrigin.q
+        && piece.origin.r === piece.targetOrigin.r
+        && rotationEquivalentToTarget(piece);
+      const isHintedPiece = hintPieceId === piece.id && !useTarget && !ghost && !mini && !isPieceCorrectlyPlaced;
+      const isHintedTargetPiece = hintedPieceIds.has(piece.id) && useTarget && !ghost && !mini;
+      const isSelected = selected === piece && !useTarget && !ghost;
+      const shouldHighlightPiece = isSelected || isHintedPiece || isHintedTargetPiece;
+      const shouldHighlightCell = isSelected && !isHintedPiece && !isHintedTargetPiece;
+      const now = performance.now();
+      const pulse = shouldHighlightPiece ? (0.5 + 0.5 * Math.sin((now - piece.pulseStart) / 210)) : 0;
+
+      let rotVisual = 0;
+      let scaleX = 1;
+      let scaleY = 1;
+      let flash = 0;
+
+      if (!useTarget && piece.actionAnim) {
+        const t = Math.min(1, (now - piece.actionAnim.start) / piece.actionAnim.duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        flash = Math.sin(Math.PI * t);
+
+        if (piece.actionAnim.type === "rotate") {
+          rotVisual = -piece.actionAnim.dir * (1 - eased) * Math.PI / 3;
+          scaleX = 1 + Math.sin(Math.PI * t) * .10;
+          scaleY = 1 + Math.sin(Math.PI * t) * .10;
+        } else if (piece.actionAnim.type === "flip") {
+          const fold = Math.sin(Math.PI * t);
+          scaleX = Math.max(.06, Math.abs(Math.cos(Math.PI * t)));
+          scaleY = 1 + fold * .18;
+        }
+
+        if (t >= 1) piece.actionAnim = null;
+      }
+
+      g.save();
+      g.translate(x, y);
+      if (rotVisual) g.rotate(rotVisual);
+      g.scale(scaleX, scaleY);
+
+      if (!isHintedTargetPiece) {
+        centers.forEach((c, index) => {
+          const outOfBoard = shouldHighlightOutOfBoard
+            ? !boardCells.has(axialKey(pieceCells[index]))
+            : false;
+          drawHexCell(
+            g,
+            c.x,
+            c.y,
+            drawSize * .98,
+            piece.color[0],
+            piece.color[1],
+            ghost,
+            shouldHighlightCell,
+            outOfBoard
+          );
+        });
+      }
+
+      if ((isHintedPiece || isHintedTargetPiece) && !ghost && !mini) {
+        drawPieceOuterHighlight(g, centers, orientedCellsForPiece(piece, useTarget), drawSize, pulse);
+      }
+
+
+      if (flash > 0 && !ghost && !mini && renderFeatureFlags.flashOverlay) {
+        g.globalAlpha = flash * .68;
+        g.globalCompositeOperation = "screen";
+        for (const c of centers) {
+          hexPath(g, c.x, c.y, drawSize * .88);
+          g.fillStyle = "rgba(255,255,255,.95)";
+          g.fill();
+        }
+      }
+
+      g.restore();
+    });
+  }
+
+  function getVisibleBoardCellSet() {
+    const visible = new Set();
+    if (!pieces.length) return visible;
+
+    const size = pieces[0].hexSize;
+    const zones = getLayoutZones();
+    const center = pixelToAxial(zones.boardCenterX - pieces[0].targetX, zones.boardCenterY - pieces[0].targetY, size);
+    const minX = zones.boardCenterX - zones.boardW / 2;
+    const maxX = zones.boardCenterX + zones.boardW / 2;
+    const minY = zones.boardCenterY - zones.boardH / 2;
+    const maxY = zones.boardCenterY + zones.boardH / 2;
+
+    for (let q = center.q - 9; q <= center.q + 9; q++) {
+      for (let r = center.r - 7; r <= center.r + 7; r++) {
+        const pos = axialToPixel({ q, r }, size);
+        const x = pieces[0].targetX + pos.x;
+        const y = pieces[0].targetY + pos.y;
+        if (x < minX || x > maxX || y < minY || y > maxY) continue;
+        visible.add(axialKey({ q, r }));
+      }
+    }
+
+    return visible;
+  }
+
+  function getTargetBoardCellSet() {
+    const target = new Set();
+    for (const p of pieces) {
+      for (const c of transformedCells(p, true)) target.add(axialKey(c));
+    }
+    return target;
+  }
+
+  function canPlaceShape(occupied, cells, origin) {
+    for (const c of cells) {
+      const q = c.q + origin.q;
+      const r = c.r + origin.r;
+      if (occupied.has(`${q},${r}`)) return false;
+    }
+    return true;
+  }
+
+  function countContactEdgesWithOccupied(occupied, cells, origin) {
+    let contacts = 0;
+    const candidateKeys = new Set(cells.map(c => `${c.q + origin.q},${c.r + origin.r}`));
+    for (const c of cells) {
+      const placed = { q:c.q + origin.q, r:c.r + origin.r };
+      for (const d of HEX_DIRS) {
+        const nk = `${placed.q + d[0]},${placed.r + d[1]}`;
+        if (occupied.has(nk) && !candidateKeys.has(nk)) contacts++;
+      }
+    }
+    return contacts;
+  }
+
+  function scoreCompactPlacement(existingOccupied, candidateCells, origin) {
+    const merged = [...existingOccupied].map(parseKey);
+    for (const c of candidateCells) merged.push({ q:c.q + origin.q, r:c.r + origin.r });
+
+    const pts = merged.map(c => axialToPixel(c, 1));
+    const minX = Math.min(...pts.map(p => p.x));
+    const maxX = Math.max(...pts.map(p => p.x));
+    const minY = Math.min(...pts.map(p => p.y));
+    const maxY = Math.max(...pts.map(p => p.y));
+    const width = Math.max(1e-6, maxX - minX);
+    const height = Math.max(1e-6, maxY - minY);
+    const aspect = Math.max(width / height, height / width);
+
+    const qs = merged.map(c => c.q);
+    const rs = merged.map(c => c.r);
+    const qRange = Math.max(...qs) - Math.min(...qs);
+    const rRange = Math.max(...rs) - Math.min(...rs);
+    const bboxAreaApprox = Math.max(1, (qRange + 1) * (rRange + 1));
+    const density = merged.length / bboxAreaApprox;
+
+    const centerQ = qs.reduce((a, b) => a + b, 0) / merged.length;
+    const centerR = rs.reduce((a, b) => a + b, 0) / merged.length;
+    const candidateCenter = candidateCells.reduce((acc, c) => {
+      acc.q += c.q + origin.q;
+      acc.r += c.r + origin.r;
+      return acc;
+    }, { q:0, r:0 });
+    candidateCenter.q /= candidateCells.length;
+    candidateCenter.r /= candidateCells.length;
+    const centerDistance = Math.hypot(candidateCenter.q - centerQ, candidateCenter.r - centerR);
+    const contacts = countContactEdgesWithOccupied(existingOccupied, candidateCells, origin);
+
+    return contacts * 32 + density * 55 - aspect * 12 - centerDistance * 3 - bboxAreaApprox * 0.10;
+  }
+
+  function placementCells(baseCells, rot, flip) {
+    let cells = flip ? reflectCells(baseCells) : baseCells.map(c => ({ q:c.q, r:c.r }));
+    cells = rotateCells(cells, rot);
+    return cells;
+  }
+
+  function neighborsOfPlaced(occupied) {
+    const out = new Set();
+    for (const k of occupied) {
+      const c = parseKey(k);
+      for (const d of HEX_DIRS) {
+        const n = axialAdd(c, d);
+        const nk = axialKey(n);
+        if (!occupied.has(nk)) out.add(nk);
+      }
+    }
+    return [...out].map(parseKey);
+  }
+  function buildSolvableLayout(pieceCount) {
+    const selectedTypes = [];
+    const used = new Set();
+    for (let i = 0; i < pieceCount; i++) {
+      let type = PENTAS[Math.floor(Math.random() * PENTAS.length)];
+      let guard = 0;
+      while (used.has(type.signature) && guard++ < 80) {
+        type = PENTAS[Math.floor(Math.random() * PENTAS.length)];
+      }
+      used.add(type.signature);
+      selectedTypes.push(type);
+    }
+
+    const placements = [];
+    const occupied = new Set();
+
+    for (let i = 0; i < selectedTypes.length; i++) {
+      const type = selectedTypes[i];
+
+      if (i === 0) {
+        const rot = Math.floor(Math.random() * 6);
+        const flip = Math.random() < .5;
+        const cells = placementCells(type.cells, rot, flip);
+        const origin = { q:0, r:0 };
+        for (const c of cells) occupied.add(`${c.q + origin.q},${c.r + origin.r}`);
+        placements.push({ type, origin, rot, flip });
+        continue;
+      }
+
+      const frontier = neighborsOfPlaced(occupied);
+      if (!frontier.length) return null;
+
+      const candidates = [];
+      for (const anchor of frontier) {
+        for (let rot = 0; rot < 6; rot++) {
+          for (let flip = 0; flip < 2; flip++) {
+            const cells = placementCells(type.cells, rot, flip);
+            for (const local of cells) {
+              const origin = { q: anchor.q - local.q, r: anchor.r - local.r };
+              if (!canPlaceShape(occupied, cells, origin)) continue;
+
+              const contactEdges = countContactEdgesWithOccupied(occupied, cells, origin);
+              if (contactEdges <= 0) continue;
+
+              const compactScore = scoreCompactPlacement(occupied, cells, origin);
+              const merged = [...occupied].map(parseKey);
+              for (const c of cells) merged.push({ q:c.q + origin.q, r:c.r + origin.r });
+
+              const qs = merged.map(c => c.q);
+              const rs = merged.map(c => c.r);
+              const ss = merged.map(c => -c.q - c.r);
+
+              const qRange = Math.max(...qs) - Math.min(...qs);
+              const rRange = Math.max(...rs) - Math.min(...rs);
+              const sRange = Math.max(...ss) - Math.min(...ss);
+
+              // Smartphone fit is the highest-priority generation rule.
+              // If adding this piece would exceed the visible mobile board range,
+              // reject this candidate immediately instead of fixing it later.
+              if (qRange > 13 || rRange > 14 || sRange > 14) continue;
+
+              const axisSpread = Math.max(qRange, rRange, sRange);
+              const bboxAreaApprox = Math.max(1, (qRange + 1) * (rRange + 1));
+
+              const score =
+                contactEdges * 140 +
+                compactScore * 1.6 -
+                axisSpread * 8 -
+                bboxAreaApprox * 0.12 +
+                Math.random() * 0.35;
+
+              candidates.push({ type, origin, rot, flip, cells, contactEdges, score });
+            }
+          }
+        }
+      }
+
+      if (!candidates.length) return null;
+
+      candidates.sort((a, b) => b.score - a.score);
+      const topCount = pieceCount >= 18 ? 4 : pieceCount >= 12 ? 6 : 9;
+      const choice = candidates[Math.floor(Math.random() * Math.min(topCount, candidates.length))];
+
+      for (const c of choice.cells) occupied.add(`${c.q + choice.origin.q},${c.r + choice.origin.r}`);
+      placements.push({ type:choice.type, origin:choice.origin, rot:choice.rot, flip:choice.flip });
+    }
+
+    return placements;
+  }
+
+  function layoutBounds(placements) {
+    const all = [];
+    for (const pl of placements) {
+      const cells = placementCells(pl.type.cells, pl.rot, pl.flip).map(c => ({
+        q:c.q + pl.origin.q,
+        r:c.r + pl.origin.r
+      }));
+      all.push(...cells);
+    }
+    const pts = all.map(c => axialToPixel(c, 1));
+    return {
+      cells: all,
+      minX:Math.min(...pts.map(p=>p.x)),
+      maxX:Math.max(...pts.map(p=>p.x)),
+      minY:Math.min(...pts.map(p=>p.y)),
+      maxY:Math.max(...pts.map(p=>p.y))
+    };
+  }
+
+  // Helper to fit the board offset within the visible area (avoid protruding above on mobile)
+  function fitBoardOffsetToVisibleArea(bounds, hexSize, offsetX, offsetY, zones) {
+    const pad = isMobileLayout() ? 14 : 20;
+    const hexMarginX = SQRT3 * hexSize * 0.58;
+    const hexMarginY = hexSize * 1.05;
+
+    const minAllowedX = zones.boardCenterX - zones.boardW / 2 + pad;
+    const maxAllowedX = zones.boardCenterX + zones.boardW / 2 - pad;
+    const minAllowedY = zones.boardCenterY - zones.boardH / 2 + pad;
+    const maxAllowedY = zones.boardCenterY + zones.boardH / 2 - pad;
+
+    const boardMinX = offsetX + bounds.minX * hexSize - hexMarginX;
+    const boardMaxX = offsetX + bounds.maxX * hexSize + hexMarginX;
+    const boardMinY = offsetY + bounds.minY * hexSize - hexMarginY;
+    const boardMaxY = offsetY + bounds.maxY * hexSize + hexMarginY;
+
+    let dx = 0;
+    let dy = 0;
+
+    if (boardMinX < minAllowedX) dx += minAllowedX - boardMinX;
+    if (boardMaxX + dx > maxAllowedX) dx -= boardMaxX + dx - maxAllowedX;
+
+    if (boardMinY < minAllowedY) dy += minAllowedY - boardMinY;
+    if (boardMaxY + dy > maxAllowedY) dy -= boardMaxY + dy - maxAllowedY;
+
+    // If the board is slightly taller than the reserved area, prioritize keeping
+    // the upper edge visible on mobile. A small lower overflow is less damaging
+    // than hiding the top of the puzzle under the card edge.
+    const finalMinY = boardMinY + dy;
+    if (isMobileLayout() && finalMinY < minAllowedY) {
+      dy += minAllowedY - finalMinY;
+    }
+
+    return { offsetX: offsetX + dx, offsetY: offsetY + dy };
+  }
+
+
+  function getDirectionalRangesFromCells(cells) {
+    const qs = cells.map(c => c.q);
+    const rs = cells.map(c => c.r);
+    const ss = cells.map(c => -c.q - c.r);
+    return {
+      qRange: Math.max(...qs) - Math.min(...qs),
+      rRange: Math.max(...rs) - Math.min(...rs),
+      sRange: Math.max(...ss) - Math.min(...ss)
+    };
+  }
+
+  function fitsSmartphoneRangesFromCells(cells) {
+    if (!cells || !cells.length) return false;
+    const ranges = getDirectionalRangesFromCells(cells);
+    return ranges.qRange <= 13 && ranges.rRange <= 14 && ranges.sRange <= 14;
+  }
+
+  function fitsSmartphoneRanges(placements) {
+    return fitsSmartphoneRangesFromCells(layoutBounds(placements).cells);
+  }
+
+  function isGoodLayoutShape(placements) {
+    const bounds = layoutBounds(placements);
+    const width = Math.max(1e-6, bounds.maxX - bounds.minX);
+    const height = Math.max(1e-6, bounds.maxY - bounds.minY);
+    const aspect = Math.max(width / height, height / width);
+
+    const pieceCount = placements.length;
+    const maxAspect = pieceCount >= 18 ? 1.72 : pieceCount >= 14 ? 1.84 : 2.15;
+    const minCenterMass = pieceCount >= 18 ? 0.50 : pieceCount >= 14 ? 0.47 : 0.42;
+    const minDensity = pieceCount >= 18 ? 0.50 : pieceCount >= 14 ? 0.47 : 0.42;
+
+    // Reject long, strip-like silhouettes in screen space.
+    if (aspect > maxAspect) return false;
+
+    const cells = bounds.cells;
+    const qs = cells.map(c => c.q);
+    const rs = cells.map(c => c.r);
+    const ss = cells.map(c => -c.q - c.r);
+
+    const qRange = Math.max(...qs) - Math.min(...qs);
+    const rRange = Math.max(...rs) - Math.min(...rs);
+    const sRange = Math.max(...ss) - Math.min(...ss);
+    const ranges = [qRange, rRange, sRange].sort((a, b) => a - b);
+
+    // Reject shapes that mainly extend along a single hex-grid axis.
+    if (ranges[2] / Math.max(1, ranges[0]) > 2.35) return false;
+
+    const centerQ = qs.reduce((a, b) => a + b, 0) / cells.length;
+    const centerR = rs.reduce((a, b) => a + b, 0) / cells.length;
+    const centerS = -centerQ - centerR;
+
+    const nearCenterCount = cells.filter(c => {
+      const s = -c.q - c.r;
+      const hexDist = Math.max(
+        Math.abs(c.q - centerQ),
+        Math.abs(c.r - centerR),
+        Math.abs(s - centerS)
+      );
+      return hexDist <= 2.15;
+    }).length;
+
+    // Reject shapes that have little mass near the center and feel branch-like.
+    if (nearCenterCount < cells.length * minCenterMass) return false;
+
+    // Reject extremely sparse bounding boxes, which often look like bent lines.
+    const bboxAreaApprox = Math.max(1, (qRange + 1) * (rRange + 1));
+    if (cells.length / bboxAreaApprox < minDensity) return false;
+
+    return true;
+  }
+
+  function getEffectiveRewardPieceCount(pieceCount, usedHints = hintUseCount) {
+    return Math.max(
+      0,
+      Number(pieceCount || 0) - Math.max(0, Number(usedHints || 0))
+    );
+  }
+
+  function getXpReward(pieceCount) {
+    // Linear XP reward. Decimals are allowed internally.
+    return pieceCount * 10;
+  }
+
+  function formatXp(value) {
+    return String(Math.floor(Math.max(0, Number(value || 0))));
+  }
+
+  function getRequiredClearsToNextPiece(pieceCount) {
+    // Number of clears required to unlock the next piece count.
+    // 3 -> 4 is a short onboarding step.
+    // 4 -> 5 starts the main progression at 25 clears.
+    // After that, the requirement increases monotonically and gradually.
+    if (pieceCount <= 3) return 10;
+    if (pieceCount === 4) return 25;
+
+    const d = pieceCount - 4;
+    return 25 + Math.round(3.2 * d + 0.28 * d * d);
+  }
+
+  function buildUnlockXpTable(maxPiece = 80) {
+    const table = {};
+    let cumulativeXp = 0;
+    table[3] = 0;
+
+    for (let piece = 3; piece < maxPiece; piece++) {
+      cumulativeXp += getXpReward(piece) * getRequiredClearsToNextPiece(piece);
+      table[piece + 1] = cumulativeXp;
+    }
+
+    return table;
+  }
+
+  function getMaxUnlockedPieces(totalXp) {
+    let unlocked = 3;
+    for (const [pieceText, requiredXp] of Object.entries(UNLOCK_XP_TABLE)) {
+      const piece = Number(pieceText);
+      if (totalXp >= requiredXp) unlocked = Math.max(unlocked, piece);
+    }
+    return unlocked;
+  }
+
+  function getPlayerLevel(totalXp = playerState?.totalXp || 0) {
+    // Level is derived from the unlocked piece count, and the unlocked piece count
+    // is managed by UNLOCK_XP_TABLE, which is built from getRequiredClearsToNextPiece().
+    return Math.max(1, getMaxUnlockedPieces(totalXp) - 2);
+  }
+
+  function getNextUnlockInfo(totalXp = playerState.totalXp) {
+    const currentMax = getMaxUnlockedPieces(totalXp);
+    const nextPiece = currentMax + 1;
+    const requiredXp = UNLOCK_XP_TABLE[nextPiece];
+    if (requiredXp == null) {
+      return { currentMax, nextPiece:null, requiredXp:null, remainingXp:0, progress:1 };
+    }
+    const currentRequiredXp = UNLOCK_XP_TABLE[currentMax] ?? 0;
+    const span = Math.max(1, requiredXp - currentRequiredXp);
+    return {
+      currentMax,
+      nextPiece,
+      requiredXp,
+      remainingXp: Math.max(0, requiredXp - totalXp),
+      progress: Math.max(0, Math.min(1, (totalXp - currentRequiredXp) / span))
+    };
+  }
+
+  function loadPlayerState() {
+    try {
+      const raw = localStorage.getItem(PLAYER_STATE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const totalXp = Math.max(0, Number(parsed.totalXp || 0));
+        const maxUnlockedPieces = getMaxUnlockedPieces(totalXp);
+        return {
+          totalXp,
+          maxUnlockedPieces,
+          selectedPieceCount: Math.max(PIECE_SELECT_MIN, Math.min(PIECE_SELECT_MAX, Number(parsed.selectedPieceCount || maxUnlockedPieces || PIECE_SELECT_MIN))),
+          clearedCount: Math.max(0, Number(parsed.clearedCount || 0)),
+          clearedByPiece: parsed.clearedByPiece && typeof parsed.clearedByPiece === "object" ? parsed.clearedByPiece : {}
+        };
+      }
+    } catch (err) {
+      console.warn("player state load failed", err);
+    }
+
+    return {
+      totalXp: 0,
+      maxUnlockedPieces: 3,
+      selectedPieceCount: PIECE_SELECT_MIN,
+      clearedCount: 0,
+      clearedByPiece: {}
+    };
+  }
+
+  function savePlayerState() {
+    localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify(playerState));
+  }
+
+  function serializeCurrentPuzzle() {
+    if (!pieces.length) return null;
+    return {
+      pieceCount: selectedPieceCount,
+      hintPieceId,
+      hintUseCount,
+      hintedPieceIds: [...hintedPieceIds],
+      pieces: pieces
+        .slice()
+        .sort((a, b) => a.id - b.id)
+        .map(p => ({
+          id: p.id,
+          typeId: p.typeId,
+          targetOrigin: p.targetOrigin,
+          targetRot: p.targetRot,
+          targetFlip: p.targetFlip,
+          origin: p.origin,
+          x: p.x,
+          y: p.y,
+          rot: p.rot,
+          flip: p.flip,
+          startOrigin: p.startOrigin,
+          startRot: p.startRot,
+          startFlip: p.startFlip,
+          solved: !!p.solved
+        }))
+    };
+  }
+
+  function loadPuzzleStore() {
+    try {
+      const raw = localStorage.getItem(PUZZLE_STATE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (err) {
+      console.warn("puzzle store load failed", err);
+      return {};
+    }
+  }
+
+  function savePuzzleStore(store) {
+    try {
+      localStorage.setItem(PUZZLE_STATE_KEY, JSON.stringify(store));
+    } catch (err) {
+      console.warn("puzzle store save failed", err);
+    }
+  }
+
+  function saveCurrentPuzzleState() {
+    if (DISABLE_PUZZLE_PERSISTENCE_FOR_TESTING) return;
+    const snapshot = serializeCurrentPuzzle();
+    if (!snapshot) return;
+
+    const store = loadPuzzleStore();
+    store[String(selectedPieceCount)] = snapshot;
+    savePuzzleStore(store);
+  }
+
+  function getSavedPuzzleForPieceCount(pieceCount) {
+    if (DISABLE_PUZZLE_PERSISTENCE_FOR_TESTING) return null;
+    const store = loadPuzzleStore();
+    const snapshot = store[String(pieceCount)];
+
+    if (
+      !snapshot ||
+      !Array.isArray(snapshot.pieces) ||
+      snapshot.pieces.length !== pieceCount
+    ) {
+      return null;
+    }
+
+    return snapshot;
+  }
+
+  function clearSavedPuzzleForPieceCount(pieceCount) {
+    if (DISABLE_PUZZLE_PERSISTENCE_FOR_TESTING) return;
+    const store = loadPuzzleStore();
+    delete store[String(pieceCount)];
+    savePuzzleStore(store);
+  }
+
+  function buildPiecesFromSnapshot(snapshot) {
+    if (!snapshot || !Array.isArray(snapshot.pieces) || !snapshot.pieces.length) return false;
+
+    const snapshotPieces = snapshot.pieces
+      .slice()
+      .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+
+    const placements = snapshotPieces.map(saved => {
+      const type = PENTAS[Number(saved.typeId)];
+      if (!type || !saved.targetOrigin) return null;
+      return {
+        type,
+        origin: saved.targetOrigin,
+        rot: Number(saved.targetRot || 0),
+        flip: saved.targetFlip ? 1 : 0,
+        saved
+      };
+    });
+
+    if (placements.some(pl => !pl)) return false;
+
+    const bounds = layoutBounds(placements);
+    const pixelW = Math.max(1, bounds.maxX - bounds.minX + SQRT3 * 2);
+    const pixelH = Math.max(1, bounds.maxY - bounds.minY + 3);
+    const zones = getLayoutZones();
+    const boardW = zones.boardW;
+    const boardH = zones.boardH;
+    const hexSize = Math.max(16, Math.min(32, boardW / pixelW, boardH / pixelH));
+    let offsetX = zones.boardCenterX - ((bounds.minX + bounds.maxX) / 2) * hexSize;
+    let offsetY = zones.boardCenterY - ((bounds.minY + bounds.maxY) / 2) * hexSize;
+    ({ offsetX, offsetY } = fitBoardOffsetToVisibleArea(bounds, hexSize, offsetX, offsetY, zones));
+
+    pieces = placements.map((pl, i) => {
+      const saved = pl.saved;
+      const baseCells = normalizeCells(pl.type.cells);
+      const currentOrigin = saved.origin || saved.startOrigin || { q:0, r:0 };
+      const startOrigin = saved.startOrigin || currentOrigin;
+      const startRot = Number.isFinite(Number(saved.startRot)) ? Number(saved.startRot) : Number(saved.rot || 0);
+      const startFlip = saved.startFlip ? 1 : 0;
+      const rot = Number.isFinite(Number(saved.rot)) ? Number(saved.rot) : startRot;
+      const flip = saved.flip ? 1 : 0;
+
+      const piece = {
+        id: i,
+        typeId: pl.type.id,
+        signature: pl.type.signature,
+        baseCells,
+        color: COLORS[i % COLORS.length],
+        hexSize,
+        miniHexSize: 10,
+        targetOrigin: saved.targetOrigin,
+        targetRot: Number(saved.targetRot || 0),
+        targetFlip: saved.targetFlip ? 1 : 0,
+        targetX: offsetX,
+        targetY: offsetY,
+        origin: { ...currentOrigin },
+        rot,
+        flip,
+        x: 0,
+        y: 0,
+        startX: 0,
+        startY: 0,
+        startOrigin: { ...startOrigin },
+        startRot,
+        startFlip,
+        solved: !!saved.solved,
+        pulseStart: performance.now() + i * 120,
+        actionAnim: null,
+        flippedForDraw(useTarget) {
+          return useTarget ? this.targetFlip : this.flip;
+        }
+      };
+
+      const currentCenter = pieceCenterForGridOrigin(piece, piece.origin, false, hexSize);
+      piece.x = Number.isFinite(Number(saved.x)) ? Number(saved.x) : currentCenter.x;
+      piece.y = Number.isFinite(Number(saved.y)) ? Number(saved.y) : currentCenter.y;
+
+      const oldOrigin = piece.origin;
+      piece.origin = { ...piece.startOrigin };
+      const startCenter = pieceCenterForGridOrigin(piece, piece.origin, false, hexSize);
+      piece.startX = startCenter.x;
+      piece.startY = startCenter.y;
+      piece.origin = oldOrigin;
+
+      return piece;
+    });
+
+    selected = null;
+    hintPieceId = snapshot.hintPieceId != null && Number.isInteger(Number(snapshot.hintPieceId))
+      ? Number(snapshot.hintPieceId)
+      : null;
+    hintUseCount = Math.max(0, Number(snapshot.hintUseCount || 0));
+    hintedPieceIds.clear();
+    if (Array.isArray(snapshot.hintedPieceIds)) {
+      for (const id of snapshot.hintedPieceIds) {
+        const n = Number(id);
+        if (Number.isInteger(n) && n >= 0 && n < pieces.length) hintedPieceIds.add(n);
+      }
+    }
+    if (hintPieceId != null && (hintPieceId < 0 || hintPieceId >= pieces.length)) hintPieceId = null;
+    if (hintPieceId != null) hintedPieceIds.add(hintPieceId);
+
+    return true;
+  }
+
+  function getBandForPieceCount(pieceCount) {
+    if (pieceCount <= 3) return "Beginner";
+    if (pieceCount <= 5) return "Easy";
+    if (pieceCount <= 8) return "Normal";
+    if (pieceCount <= 12) return "Hard";
+    if (pieceCount <= 18) return "Expert";
+    return "Master";
+  }
+
+  function getCurrentSpec() {
+    const unlock = getNextUnlockInfo(playerState.totalXp);
+    return {
+      pieceCount: selectedPieceCount,
+      maxUnlockedPieces: playerState.maxUnlockedPieces,
+      totalXp: playerState.totalXp,
+      clearedCount: playerState.clearedCount,
+      band: getBandForPieceCount(selectedPieceCount),
+      nextPiece: unlock.nextPiece,
+      nextRequiredXp: unlock.requiredXp,
+      remainingXp: unlock.remainingXp,
+      unlockProgress: unlock.progress,
+      minGoodShapeAttempts: 6
+    };
+  }
+
+  function getPieceCount() {
+    return selectedPieceCount;
+  }
+
+  function updatePieceUI() {
+    playerState.maxUnlockedPieces = getMaxUnlockedPieces(playerState.totalXp);
+    const maxSelectablePiece = Math.min(PIECE_SELECT_MAX, playerState.maxUnlockedPieces || PIECE_SELECT_MIN);
+    selectedPieceCount = Math.max(PIECE_SELECT_MIN, Math.min(selectedPieceCount, maxSelectablePiece));
+    playerState.selectedPieceCount = selectedPieceCount;
+
+    const pieceBtn = document.getElementById("pieceBtn");
+    if (pieceBtn) pieceBtn.textContent = `${selectedPieceCount} Pieces`;
+    renderPieceMenu();
+
+    updateXpUI();
+  }
+
+  function renderPieceMenu() {
+    if (!pieceMenu || !playerState) return;
+
+    pieceMenu.innerHTML = "";
+    const maxPiece = Math.min(PIECE_SELECT_MAX, playerState.maxUnlockedPieces || PIECE_SELECT_MIN);
+
+    for (let piece = PIECE_SELECT_MIN; piece <= PIECE_SELECT_MAX; piece++) {
+      const unlocked = piece <= maxPiece;
+      const option = document.createElement("button");
+      option.type = "button";
+      option.className = `piece-option${piece === selectedPieceCount ? " active" : ""}${unlocked ? "" : " locked"}`;
+      option.textContent = `${piece} Pieces`;
+      option.disabled = !unlocked;
+      option.setAttribute("aria-disabled", unlocked ? "false" : "true");
+      option.addEventListener("click", e => {
+        e.stopPropagation();
+        if (!unlocked) return;
+        pieceMenu.classList.remove("show");
+        setSelectedPieceCount(piece, true);
+      });
+      pieceMenu.appendChild(option);
+    }
+  }
+
+  function updateXpUI() {
+    if (!xpLabel || !xpValue || !xpFill || !playerState) return;
+
+    const info = getNextUnlockInfo(playerState.totalXp);
+    const currentRequiredXp = UNLOCK_XP_TABLE[info.currentMax] ?? 0;
+    const level = getPlayerLevel(playerState.totalXp);
+
+    if (!info.nextPiece) {
+      xpLabel.textContent = "";
+      xpValue.textContent = `Level ${level} ・ ${formatXp(playerState.totalXp)} XP`;
+      xpFill.style.width = "100%";
+      return;
+    }
+
+    const gainedInThisStage = Math.max(0, playerState.totalXp - currentRequiredXp);
+    const neededInThisStage = Math.max(1, info.requiredXp - currentRequiredXp);
+    const progressPercent = Math.max(
+      0,
+      Math.min(100, (gainedInThisStage / neededInThisStage) * 100)
+    );
+
+    xpLabel.textContent = "";
+    xpValue.textContent = `Level ${level} ・ ${formatXp(gainedInThisStage)} / ${formatXp(neededInThisStage)} XP`;
+    xpFill.style.width = `${progressPercent}%`;
+  }
+
+  function setSelectedPieceCount(pieceCount, shouldRegenerate = true) {
+    playerState.maxUnlockedPieces = getMaxUnlockedPieces(playerState.totalXp);
+    const maxSelectablePiece = Math.min(PIECE_SELECT_MAX, playerState.maxUnlockedPieces || PIECE_SELECT_MIN);
+    selectedPieceCount = Math.max(PIECE_SELECT_MIN, Math.min(pieceCount, maxSelectablePiece));
+    playerState.selectedPieceCount = selectedPieceCount;
+    savePlayerState();
+    updatePieceUI();
+    if (shouldRegenerate) regenerate(false);
+  }
+
+  function formatProgressText() {
+    const spec = getCurrentSpec();
+    const level = getPlayerLevel(spec.totalXp);
+    if (!spec.nextPiece) {
+      return `Level ${level} ・ XP ${formatXp(spec.totalXp)} / ${spec.maxUnlockedPieces} pieces unlocked`;
+    }
+    return `Level ${level} ・ XP ${formatXp(spec.totalXp)} / ${formatXp(spec.nextRequiredXp)} ・ Next ${spec.nextPiece} pieces: ${formatXp(spec.remainingXp)} XP left`;
+  }
+
+  function getRandomClearMessage() {
+    return CLEAR_MESSAGES[Math.floor(Math.random() * CLEAR_MESSAGES.length)];
+  }
+
+  function grantClearXp(pieceCount) {
+    const usedHints = Math.max(0, Number(hintUseCount || 0));
+    const rewardPieceCount = getEffectiveRewardPieceCount(pieceCount, usedHints);
+    const gainedXp = getXpReward(rewardPieceCount);
+    const oldMax = playerState.maxUnlockedPieces;
+
+    playerState.totalXp += gainedXp;
+    playerState.clearedCount += 1;
+    playerState.clearedByPiece[pieceCount] = (playerState.clearedByPiece[pieceCount] || 0) + 1;
+    playerState.maxUnlockedPieces = getMaxUnlockedPieces(playerState.totalXp);
+    if (playerState.maxUnlockedPieces > oldMax) {
+      selectedPieceCount = Math.max(PIECE_SELECT_MIN, Math.min(playerState.maxUnlockedPieces, PIECE_SELECT_MAX));
+    }
+    playerState.selectedPieceCount = selectedPieceCount;
+    savePlayerState();
+    updatePieceUI();
+    updateXpUI();
+
+    return {
+      gainedXp,
+      oldMax,
+      newMax: playerState.maxUnlockedPieces,
+      unlockedNewPiece: playerState.maxUnlockedPieces > oldMax,
+      usedHints,
+      rewardPieceCount
+    };
+  }
+
+  function regenerate(forceNewPuzzle = false) {
+    hasCleared = false;
+    hintPieceId = null;
+    hintUseCount = 0;
+    hintedPieceIds.clear();
+    clearPopup.classList.remove("show", "rank-up");
+    if (clearTitle) clearTitle.textContent = "Clear!";
+    selected = null;
+    clearDragStaticLayer();
+
+    updatePieceUI();
+    const spec = getCurrentSpec();
+    const count = spec.pieceCount;
+
+    if (!forceNewPuzzle) {
+      const savedPuzzle = getSavedPuzzleForPieceCount(count);
+      if (savedPuzzle && buildPiecesFromSnapshot(savedPuzzle)) {
+        statusEl.textContent = `${selectedPieceCount} Pieces ${spec.band}`;
+        updateXpUI();
+        draw();
+        return;
+      }
+    }
+
+    clearSavedPuzzleForPieceCount(count);
+
+    let placements = null;
+    const generationStart = performance.now();
+    const generationBudgetMs = count >= 18 ? 520 : count >= 14 ? 420 : 320;
+    for (let attempt = 0; attempt < spec.minGoodShapeAttempts; attempt++) {
+      if (attempt > 0 && performance.now() - generationStart > generationBudgetMs) break;
+      const candidate = buildSolvableLayout(count);
+      if (!candidate) continue;
+
+      // New rule: smartphone-fit layouts are accepted immediately.
+      // The island-growth builder already rejects partial placements that exceed
+      // qRange <= 13, rRange <= 14, sRange <= 14.
+      if (fitsSmartphoneRanges(candidate)) {
+        placements = candidate;
+        break;
+      }
+
+      if (!placements) placements = candidate;
+    }
+    if (!placements) {
+      statusEl.textContent = "生成に失敗しました。New Puzzleを押してください。";
+      return;
+    }
+
+    const bounds = layoutBounds(placements);
+    const pixelW = Math.max(1, bounds.maxX - bounds.minX + SQRT3 * 2);
+    const pixelH = Math.max(1, bounds.maxY - bounds.minY + 3);
+    const zones = getLayoutZones();
+    const boardW = zones.boardW;
+    const boardH = zones.boardH;
+    const hexSize = Math.max(16, Math.min(32, boardW / pixelW, boardH / pixelH));
+    let offsetX = zones.boardCenterX - ((bounds.minX + bounds.maxX) / 2) * hexSize;
+    let offsetY = zones.boardCenterY - ((bounds.minY + bounds.maxY) / 2) * hexSize;
+    ({ offsetX, offsetY } = fitBoardOffsetToVisibleArea(bounds, hexSize, offsetX, offsetY, zones));
+
+    pieces = placements.map((pl, i) => {
+      const baseCells = normalizeCells(pl.type.cells);
+      const targetCells = placementCells(baseCells, pl.rot, pl.flip);
+      const targetPts = targetCells.map(c => axialToPixel(c, hexSize));
+      const targetCentroid = targetPts.reduce((acc, p) => {
+        acc.x += p.x;
+        acc.y += p.y;
+        return acc;
+      }, { x:0, y:0 });
+      targetCentroid.x /= targetPts.length;
+      targetCentroid.y /= targetPts.length;
+      const targetPos = axialToPixel(pl.origin, hexSize);
+      const start = scatteredStart(i, count, targetPos.x + offsetX + targetCentroid.x, targetPos.y + offsetY + targetCentroid.y);
+      return {
+        id: i,
+        typeId: pl.type.id,
+        signature: pl.type.signature,
+        baseCells,
+        color: COLORS[i % COLORS.length],
+        hexSize,
+        miniHexSize: 10,
+        targetOrigin: pl.origin,
+        targetRot: pl.rot,
+        targetFlip: pl.flip ? 1 : 0,
+        targetX: offsetX,
+        targetY: offsetY,
+        origin: { q:0, r:0 },
+        rot: Math.floor(Math.random() * 6),
+        flip: Math.random() < .5 ? 1 : 0,
+        x: start.x,
+        y: start.y,
+        startX: start.x,
+        startY: start.y,
+        startOrigin: null,
+        startRot: null,
+        startFlip: null,
+        solved: false,
+        pulseStart: performance.now() + i * 120,
+        actionAnim: null,
+        flippedForDraw(useTarget) {
+          return useTarget ? this.targetFlip : this.flip;
+        }
+      };
+    });
+
+    for (const p of pieces) {
+      snapPieceToGrid(p);
+    }
+
+    for (const p of pieces) {
+      p.startOrigin = { ...p.origin };
+      p.startRot = p.rot;
+      p.startFlip = p.flip;
+    }
+
+    saveCurrentPuzzleState();
+
+    statusEl.textContent = `${selectedPieceCount} Pieces ${spec.band}`;
+    updateXpUI();
+    draw();
+  }
+
+  function levelName() {
+    const spec = getCurrentSpec();
+    return `${selectedPieceCount} Pieces ${spec.band}`;
+  }
+
+  function scatteredStart(i, count, tx, ty) {
+    const zones = getLayoutZones();
+
+    if (isMobileLayout()) {
+      const cols = Math.min(count, count <= 4 ? 4 : 5);
+      const rows = Math.ceil(count / cols);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cellW = zones.pieceW / cols;
+      const cellH = zones.pieceH / Math.max(1, rows);
+      const rowOffset = rows > 1 && row % 2 ? cellW * .18 : 0;
+      return {
+        x: zones.pieceCenterX - zones.pieceW / 2 + cellW * (col + .5) + rowOffset,
+        y: zones.pieceCenterY - zones.pieceH / 2 + cellH * (row + .5)
+      };
+    }
+
+    const cols = Math.min(count, count <= 4 ? 2 : count <= 9 ? 3 : 4);
+    const rows = Math.ceil(count / cols);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cellW = zones.pieceW / cols;
+    const cellH = zones.pieceH / Math.max(1, rows);
+    const rowOffset = rows > 1 && row % 2 ? cellW * .20 : 0;
+
+    return {
+      x: zones.pieceCenterX - zones.pieceW / 2 + cellW * (col + .5) + rowOffset,
+      y: zones.pieceCenterY - zones.pieceH / 2 + cellH * (row + .5)
+    };
+  }
+
+  function drawBoard() {
+    return functionPerfStats.measure("drawBoard", () => {
+      if (!pieces.length) return;
+
+      const occupied = new Set();
+      for (const p of pieces) {
+        for (const c of transformedCells(p, true)) occupied.add(axialKey(c));
+      }
+
+      ctx.save();
+      for (const key of occupied) {
+        const c = parseKey(key);
+        const pos = axialToPixel(c, pieces[0].hexSize);
+        drawHexCell(ctx, pieces[0].targetX + pos.x, pieces[0].targetY + pos.y, pieces[0].hexSize * .93, "", "", true);
+      }
+
+      ctx.lineWidth = isDarkTheme() ? .65 : 1;
+      ctx.strokeStyle = isDarkTheme() ? "rgba(144,212,255,.035)" : "rgba(255,255,255,.22)";
+      const size = pieces[0].hexSize;
+      const visibleBoardCells = getVisibleBoardCellSet();
+      for (const key of visibleBoardCells) {
+        const c = parseKey(key);
+        const pos = axialToPixel(c, size);
+        const x = pieces[0].targetX + pos.x;
+        const y = pieces[0].targetY + pos.y;
+        hexPath(ctx, x, y, size * .94);
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+  }
+
+  function drawHintOutline() {
+    if (!hintedPieceIds.size || !pieces.length) return;
+
+    for (const id of hintedPieceIds) {
+      const piece = pieces.find(p => p.id === id);
+      if (!piece) continue;
+      drawPiece(ctx, piece, { target:true });
+    }
+  }
+
+  function drawAnswer() {
+    const aw = answerCanvas.clientWidth || 144;
+    const ah = answerCanvas.clientHeight || 116;
+    ansCtx.clearRect(0,0,aw,ah);
+    if (!showAnswer || !pieces.length) return;
+
+    const allCells = pieces.flatMap(p => transformedCells(p, true));
+    const pts = allCells.map(c => axialToPixel(c, 1));
+    const minX = Math.min(...pts.map(p=>p.x));
+    const maxX = Math.max(...pts.map(p=>p.x));
+    const minY = Math.min(...pts.map(p=>p.y));
+    const maxY = Math.max(...pts.map(p=>p.y));
+    const scale = Math.min((aw - 20) / (maxX - minX + SQRT3 * 2), (ah - 14) / (maxY - minY + 3));
+    const offX = aw / 2 - ((minX + maxX) / 2) * scale;
+    const offY = ah / 2 - ((minY + maxY) / 2) * scale;
+
+    for (const p of pieces) {
+      const oldMini = p.miniHexSize;
+      p.miniHexSize = scale;
+      const tempX = p.targetX;
+      const tempY = p.targetY;
+      p.targetX = offX;
+      p.targetY = offY;
+      drawPiece(ansCtx, p, { target:true, mini:true });
+      p.targetX = tempX;
+      p.targetY = tempY;
+      p.miniHexSize = oldMini;
+    }
+  }
+
+  function ensureDragLayerCanvas() {
+    if (!dragLayerCanvas) {
+      dragLayerCanvas = document.createElement("canvas");
+      dragLayerCtx = dragLayerCanvas.getContext("2d");
+    }
+
+    const needW = Math.floor(W * dpr);
+    const needH = Math.floor(H * dpr);
+    if (dragLayerCanvas.width !== needW || dragLayerCanvas.height !== needH) {
+      dragLayerCanvas.width = needW;
+      dragLayerCanvas.height = needH;
+    }
+    dragLayerCtx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function buildDragStaticLayer(activePiece) {
+    return functionPerfStats.measure("buildDragStaticLayer", () => {
+      drawDebugStats.buildDragLayer++;
+      const __staticLayerStart = performance.now();
+      if (!activePiece || !pieces.length) {
+        dragLayerReady = false;
+        dragLayerPiece = null;
+        return;
+      }
+
+      ensureDragLayerCanvas();
+      dragLayerCtx.clearRect(0,0,W,H);
+
+      const originalCtx = ctx;
+      ctx = dragLayerCtx;
+      drawBoard();
+      drawHintOutline();
+
+      const targetBoardCells = getTargetBoardCellSet();
+      for (const p of pieces) {
+        if (p === activePiece) continue;
+        drawPiece(ctx, p, { boardCells: targetBoardCells });
+      }
+
+      ctx = originalCtx;
+      dragLayerReady = true;
+      dragLayerPiece = activePiece;
+      const __staticLayerMs = performance.now() - __staticLayerStart;
+      renderPerfStats.staticLayerBuilds++;
+      renderPerfStats.staticLayerBuildMs += __staticLayerMs;
+      renderPerfStats.maxStaticLayerBuildMs = Math.max(renderPerfStats.maxStaticLayerBuildMs, __staticLayerMs);
+    });
+  }
+
+  function clearDragStaticLayer() {
+    dragLayerReady = false;
+    dragLayerPiece = null;
+  }
+
+  function drawActivePieceFrame(activePiece) {
+    return functionPerfStats.measure("drawActivePieceFrame", () => {
+      if (!activePiece) {
+        draw();
+        return;
+      }
+
+      if (!dragLayerReady || dragLayerPiece !== activePiece) {
+        buildDragStaticLayer(activePiece);
+      }
+
+      if (!dragLayerReady) {
+        draw();
+        return;
+      }
+
+      ctx.clearRect(0,0,W,H);
+      ctx.drawImage(dragLayerCanvas, 0, 0, W, H);
+
+      const targetBoardCells = getTargetBoardCellSet();
+      drawPiece(ctx, activePiece, { boardCells: targetBoardCells });
+    });
+  }
+
+  function drawDuringDrag() {
+    return functionPerfStats.measure("drawDuringDrag", () => {
+      drawDebugStats.dragDraw++;
+      drawDebugStats.lastDragDrawAt = performance.now();
+      const __dragFrameStart = performance.now();
+      if (!drag || !drag.p) {
+        draw();
+        return;
+      }
+
+      drawActivePieceFrame(drag.p);
+      const __dragFrameMs = performance.now() - __dragFrameStart;
+      renderPerfStats.dragFrames++;
+      renderPerfStats.dragFrameMs += __dragFrameMs;
+      renderPerfStats.maxDragFrameMs = Math.max(renderPerfStats.maxDragFrameMs, __dragFrameMs);
+    });
+  }
+
+  function drawSelectedPulseFrame() {
+    return functionPerfStats.measure("drawSelectedPulseFrame", () => {
+      const __selectedPulseStart = performance.now();
+      if (!selected) {
+        draw();
+        return;
+      }
+      draw();
+      const __selectedPulseMs = performance.now() - __selectedPulseStart;
+      renderPerfStats.selectedPulseFrames++;
+      renderPerfStats.selectedPulseMs += __selectedPulseMs;
+      renderPerfStats.maxSelectedPulseMs = Math.max(renderPerfStats.maxSelectedPulseMs, __selectedPulseMs);
+    });
+  }
+
+  function getActionAnimatingPiece() {
+    return pieces.find(p => p.actionAnim) || null;
+  }
+
+  function drawActionAnimationFrame() {
+    return functionPerfStats.measure("drawActionAnimationFrame", () => {
+      const animPiece = getActionAnimatingPiece();
+      if (!animPiece) {
+        if (selected) drawSelectedPulseFrame();
+        else draw();
+        return;
+      }
+
+      // During rotate/flip animation, keep the board and other pieces cached and
+      // redraw only the animating piece. Full redraw every frame is still too
+      // expensive on mobile, even after simplifying the glass effects.
+      drawActivePieceFrame(animPiece);
+    });
+  }
+
+  function draw() {
+    return functionPerfStats.measure("draw:full", () => {
+      drawDebugStats.fullDraw++;
+      drawDebugStats.lastFullDrawAt = performance.now();
+      const __fullDrawStart = performance.now();
+      if (pieces.some(p => p.actionAnim)) renderPerfStats.actionAnimationFrames++;
+      ctx.clearRect(0,0,W,H);
+      drawBoard();
+      drawHintOutline();
+
+      const targetBoardCells = getTargetBoardCellSet();
+      const ordered = [...pieces];
+      for (const p of ordered) drawPiece(ctx, p, { boardCells: targetBoardCells });
+
+      if (!drag) drawAnswer();
+      const __fullDrawMs = performance.now() - __fullDrawStart;
+      renderPerfStats.fullDrawMs += __fullDrawMs;
+      renderPerfStats.maxFullDrawMs = Math.max(renderPerfStats.maxFullDrawMs, __fullDrawMs);
+    });
+  }
+
+  function needsAnimationLoop() {
+    if (drag) return !!getActionAnimatingPiece() || hasCleared;
+    return !!getActionAnimatingPiece() || hasCleared;
+  }
+
+  function requestDrawLoop() {
+    if (animFrame) return;
+    const requestedAt = performance.now();
+    const eventFreshMs = 180;
+    const rotateFreshMs = 1200;
+    const rawMove = interactionPerfStats.lastPointerMoveAt || 0;
+    const rawUp = interactionPerfStats.lastPointerUpAt || 0;
+    const rawRotate = interactionPerfStats.lastRotateCommandAt || 0;
+    const fromMove = rawMove && requestedAt - rawMove <= eventFreshMs ? rawMove : 0;
+    const fromUp = rawUp && requestedAt - rawUp <= eventFreshMs ? rawUp : 0;
+    const fromRotate = rawRotate && requestedAt - rawRotate <= rotateFreshMs ? rawRotate : 0;
+
+    const step = () => {
+      const frameStart = performance.now();
+
+      if (fromMove) {
+        interactionPerfStats.mark("pointermove->firstFrame", fromMove);
+        if (interactionPerfStats.lastPointerMoveAt === fromMove) interactionPerfStats.lastPointerMoveAt = 0;
+      }
+      if (fromUp) {
+        interactionPerfStats.mark("pointerup->firstFrame", fromUp);
+        if (interactionPerfStats.lastPointerUpAt === fromUp) interactionPerfStats.lastPointerUpAt = 0;
+      }
+      if (fromRotate) {
+        interactionPerfStats.mark("rotateCommand->firstFrame", fromRotate);
+        if (interactionPerfStats.lastRotateCommandAt === fromRotate) interactionPerfStats.lastRotateCommandAt = 0;
+      }
+      interactionPerfStats.mark("requestDrawLoop->frame", requestedAt);
+
+      animFrame = null;
+      if (drag) drawDuringDrag();
+      else if (getActionAnimatingPiece()) drawActionAnimationFrame();
+      else if (selected) drawSelectedPulseFrame();
+      else draw();
+
+      interactionPerfStats.mark("frameCallbackBody", frameStart);
+      if (needsAnimationLoop()) requestDrawLoop();
+    };
+    animFrame = requestAnimationFrame(step);
+  }
+
+  function animatePieceAction(piece, type, dir = 1) {
+    const __start = performance.now();
+    if (!piece) return;
+    if (type === "rotate") interactionPerfStats.lastRotateCommandAt = __start;
+    clearDragStaticLayer();
+    piece.actionAnim = {
+      type,
+      dir,
+      start: performance.now(),
+      duration: type === "flip" ? 430 : 330
+    };
+    requestDrawLoop();
+    interactionPerfStats.mark(`animatePieceAction:${type}`, __start);
+  }
+
+  function pick(x, y) {
+    for (let i = pieces.length - 1; i >= 0; i--) {
+      const p = pieces[i];
+      const centers = transformedLocalHexCenters(p, false, p.hexSize);
+      for (const c of centers) {
+        const dx = x - (p.x + c.x);
+        const dy = y - (p.y + c.y);
+        if (Math.hypot(dx, dy) <= p.hexSize * 1.02) return p;
+      }
+    }
+    return null;
+  }
+
+  function snapPieceToGrid(p) {
+    const centroid = orientedCentroidOffset(p, false, p.hexSize);
+    const snapped = pixelToAxial(
+      p.x - p.targetX - centroid.x,
+      p.y - p.targetY - centroid.y,
+      p.hexSize
+    );
+    const center = pieceCenterForGridOrigin(p, snapped, false, p.hexSize);
+    p.origin = snapped;
+    p.x = center.x;
+    p.y = center.y;
+  }
+
+  function rotationEquivalentToTarget(p) {
+    const currentCells = transformedCells(p, false).map(axialKey).sort().join(";");
+    const targetCells = transformedCells(p, true).map(axialKey).sort().join(";");
+    return currentCells === targetCells;
+  }
+
+  function isBoardCoverageSolved() {
+    if (!pieces.length) return false;
+
+    const targetCells = getTargetBoardCellSet();
+    const currentCells = new Set();
+
+    for (const p of pieces) {
+      for (const c of transformedCells(p, false)) {
+        const key = axialKey(c);
+        // If two pieces overlap, the Set size will be too small at the end.
+        currentCells.add(key);
+      }
+    }
+
+    const expectedCellCount = pieces.reduce((sum, p) => sum + p.baseCells.length, 0);
+    if (currentCells.size !== expectedCellCount) return false;
+    if (currentCells.size !== targetCells.size) return false;
+
+    for (const key of currentCells) {
+      if (!targetCells.has(key)) return false;
+    }
+
+    return true;
+  }
+
+  function hasPieceOverlap(piece) {
+    const ownCells = new Set(transformedCells(piece, false).map(axialKey));
+    for (const other of pieces) {
+      if (other === piece) continue;
+      for (const key of transformedCells(other, false).map(axialKey)) {
+        if (ownCells.has(key)) return true;
+      }
+    }
+    return false;
+  }
+
+  function canPlacePieceAtOrigin(piece, origin) {
+    const occupied = new Set();
+    for (const other of pieces) {
+      if (other === piece) continue;
+      for (const key of transformedCells(other, false).map(axialKey)) occupied.add(key);
+    }
+
+    const previousOrigin = piece.origin;
+    piece.origin = { ...origin };
+    const cells = transformedCells(piece, false);
+    piece.origin = previousOrigin;
+
+    return cells.every(c => !occupied.has(axialKey(c)));
+  }
+
+  function placePieceAtOrigin(piece, origin) {
+    piece.origin = { ...origin };
+    const center = pieceCenterForGridOrigin(piece, piece.origin, false, piece.hexSize);
+    piece.x = center.x;
+    piece.y = center.y;
+    piece.solved = rotationEquivalentToTarget(piece);
+  }
+
+  function nudgePieceAwayFromOverlap(piece) {
+    if (!hasPieceOverlap(piece)) return true;
+
+    const base = { ...piece.origin };
+    const candidates = [];
+    const seen = new Set();
+    const push = (origin, radius) => {
+      const key = axialKey(origin);
+      if (seen.has(key)) return;
+      seen.add(key);
+      const center = pieceCenterForGridOrigin(piece, origin, false, piece.hexSize);
+      candidates.push({
+        origin,
+        radius,
+        distance: Math.hypot(center.x - piece.x, center.y - piece.y)
+      });
+    };
+
+    push(base, 0);
+    for (let radius = 1; radius <= 14; radius++) {
+      for (let dq = -radius; dq <= radius; dq++) {
+        for (let dr = -radius; dr <= radius; dr++) {
+          const ds = -dq - dr;
+          if (Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds)) !== radius) continue;
+          push({ q: base.q + dq, r: base.r + dr }, radius);
+        }
+      }
+    }
+
+    candidates.sort((a, b) => a.radius - b.radius || a.distance - b.distance);
+    const open = candidates.find(candidate => canPlacePieceAtOrigin(piece, candidate.origin));
+    if (!open) return false;
+
+    placePieceAtOrigin(piece, open.origin);
+    return true;
+  }
+
+  function capturePieceState(piece) {
+    return {
+      x: piece.x,
+      y: piece.y,
+      origin: { ...piece.origin },
+      rot: piece.rot,
+      flip: piece.flip,
+      solved: !!piece.solved
+    };
+  }
+
+  function restorePieceState(piece, state) {
+    if (!piece || !state) return;
+    piece.x = state.x;
+    piece.y = state.y;
+    piece.origin = { ...state.origin };
+    piece.rot = state.rot;
+    piece.flip = state.flip;
+    piece.solved = !!state.solved;
+  }
+
+  function rejectOverlapOrSave(piece, previousState) {
+    const hadOverlap = hasPieceOverlap(piece);
+    if (hadOverlap && !nudgePieceAwayFromOverlap(piece)) {
+      restorePieceState(piece, previousState);
+      piece.actionAnim = null;
+      statusEl.textContent = "ピースは重ねられません";
+      return false;
+    }
+    if (hadOverlap) {
+      statusEl.textContent = "ピースが重ならない近くの位置へずらしました";
+    }
+    saveCurrentPuzzleState();
+    return true;
+  }
+
+  function trySnapToTarget(p) {
+    snapPieceToGrid(p);
+    const closeOrigin = p.origin.q === p.targetOrigin.q && p.origin.r === p.targetOrigin.r;
+    const targetCenter = pieceCenterForGridOrigin(p, p.targetOrigin, false, p.hexSize);
+    const nearScreen = Math.hypot(p.x - targetCenter.x, p.y - targetCenter.y) < p.hexSize * .28;
+
+    if (!closeOrigin && !nearScreen) {
+      p.solved = false;
+      return;
+    }
+
+    // Snap only the position to the target grid origin.
+    // Rotation and flip must be changed only by explicit user actions.
+    p.origin = { ...p.targetOrigin };
+    const center = pieceCenterForGridOrigin(p, p.origin, false, p.hexSize);
+    p.x = center.x;
+    p.y = center.y;
+    p.solved = rotationEquivalentToTarget(p);
+  }
+
+  function checkClear() {
+    const all = isBoardCoverageSolved();
+    if (all) {
+      for (const p of pieces) p.solved = true;
+      if (!hasCleared) {
+        hasCleared = true;
+        const result = grantClearXp(selectedPieceCount);
+      console.log("[clear reward]", {
+        selectedPieceCount,
+        usedHints: result.usedHints,
+        rewardPieceCount: result.rewardPieceCount,
+        gainedXp: result.gainedXp
+      });
+      const rankedUp = result.unlockedNewPiece;
+      playSound(rankedUp ? "rankup" : "clear");
+
+      clearPopup.classList.toggle("rank-up", rankedUp);
+      if (clearTitle) clearTitle.textContent = rankedUp ? "Rank Up!" : "Clear!";
+      clearText.textContent = rankedUp
+        ? `New: ${result.newMax} Pieces`
+        : getRandomClearMessage();
+
+      if (rankedUp && xpPanel) {
+        xpPanel.classList.remove("rank-flash");
+        void xpPanel.offsetWidth;
+        xpPanel.classList.add("rank-flash");
+      }
+
+      clearPopup.classList.add("show");
+        statusEl.textContent = result.unlockedNewPiece
+          ? `New unlock: ${result.newMax} Pieces!`
+          : `${levelName()} Clear!`;
+        requestDrawLoop();
+      }
+    } else {
+      hasCleared = false;
+      for (const p of pieces) p.solved = rotationEquivalentToTarget(p);
+      clearPopup.classList.remove("show");
+      const spec = getCurrentSpec();
+      statusEl.textContent = `${selectedPieceCount} Pieces ${spec.band}`;
+      updateXpUI();
+    }
+  }
+
+  function resetPieces() {
+    clearPopup.classList.remove("show");
+    hasCleared = false;
+    hintPieceId = null;
+    hintedPieceIds.clear();
+    for (const p of pieces) {
+      p.x = p.startX;
+      p.y = p.startY;
+      p.origin = { ...p.startOrigin };
+      p.rot = p.startRot;
+      p.flip = p.startFlip;
+      p.solved = false;
+    }
+    selected = null;
+    clearDragStaticLayer();
+    saveCurrentPuzzleState();
+    draw();
+    checkClear();
+  }
+
+  function clearLongPressTimer() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  function flipSelected() {
+    if (!selected) {
+      statusEl.textContent = "先にピースを1つ選択してください";
+      return;
+    }
+    const before = capturePieceState(selected);
+    selected.flip = selected.flip ? 0 : 1;
+    animatePieceAction(selected, "flip", 1);
+    playSound("flip");
+    trySnapToTarget(selected);
+    if (!rejectOverlapOrSave(selected, before)) {
+      clearDragStaticLayer();
+      draw();
+      return;
+    }
+    checkClear();
+    if (getActionAnimatingPiece()) drawActionAnimationFrame();
+    else draw();
+  }
+
+  function showHint() {
+    if (!pieces.length || hasCleared) return;
+
+    const candidates = pieces.filter(p => !rotationEquivalentToTarget(p));
+    const pool = candidates.length ? candidates : pieces;
+    if (!pool.length) return;
+
+    const currentIndex = pool.findIndex(p => p.id === hintPieceId);
+    const nextPiece = pool[(currentIndex + 1 + pool.length) % pool.length];
+    const wasAlreadyHinted = hintedPieceIds.has(nextPiece.id);
+
+    hintPieceId = nextPiece.id;
+    hintedPieceIds.add(nextPiece.id);
+
+    if (!wasAlreadyHinted) {
+      hintUseCount++;
+      console.log("[hint used]", {
+        selectedPieceCount,
+        hintUseCount,
+        rewardPieceCount: getEffectiveRewardPieceCount(selectedPieceCount, hintUseCount)
+      });
+    }
+
+    selected = nextPiece;
+    nextPiece.pulseStart = performance.now();
+    clearDragStaticLayer();
+
+    saveCurrentPuzzleState();
+    draw();
+    requestDrawLoop();
+  }
+
+  function setSoundEnabled(enabled, persist = true) {
+    soundEnabled = !!enabled;
+    if (soundSwitch) soundSwitch.dataset.value = soundEnabled ? "on" : "off";
+    if (gameSoundSwitch) gameSoundSwitch.dataset.value = soundEnabled ? "on" : "off";
+    if (soundOnBtn) soundOnBtn.classList.toggle("active", soundEnabled);
+    if (soundOffBtn) soundOffBtn.classList.toggle("active", !soundEnabled);
+    if (gameSoundOnBtn) gameSoundOnBtn.classList.toggle("active", soundEnabled);
+    if (gameSoundOffBtn) gameSoundOffBtn.classList.toggle("active", !soundEnabled);
+    if (soundOnBtn) soundOnBtn.setAttribute("aria-pressed", String(soundEnabled));
+    if (soundOffBtn) soundOffBtn.setAttribute("aria-pressed", String(!soundEnabled));
+    if (gameSoundOnBtn) gameSoundOnBtn.setAttribute("aria-pressed", String(soundEnabled));
+    if (gameSoundOffBtn) gameSoundOffBtn.setAttribute("aria-pressed", String(!soundEnabled));
+    if (persist) localStorage.setItem(SOUND_STATE_KEY, soundEnabled ? "on" : "off");
+  }
+
+  function toggleSound() {
+    setSoundEnabled(!soundEnabled);
+  }
+
+  function normalizeTheme(value) {
+    return value === "light" ? "light" : "dark";
+  }
+
+  function setTheme(theme, persist = true) {
+    const nextTheme = normalizeTheme(theme);
+    document.body.classList.toggle("light-theme", nextTheme === "light");
+    document.body.classList.toggle("dark-theme", nextTheme === "dark");
+    if (themeSwitch) themeSwitch.dataset.value = nextTheme;
+    if (gameThemeSwitch) gameThemeSwitch.dataset.value = nextTheme;
+
+    if (lightModeBtn) lightModeBtn.classList.toggle("active", nextTheme === "light");
+    if (darkModeBtn) darkModeBtn.classList.toggle("active", nextTheme === "dark");
+    if (lightModeBtn) lightModeBtn.setAttribute("aria-pressed", String(nextTheme === "light"));
+    if (darkModeBtn) darkModeBtn.setAttribute("aria-pressed", String(nextTheme === "dark"));
+
+    if (persist) {
+      try { localStorage.setItem(THEME_STATE_KEY, nextTheme); } catch (err) {}
+    }
+  
+    // Theme changes affect canvas colors and cached drag/static layers.
+    // Redraw immediately to avoid a one-frame flash from the previous theme.
+    clearDragStaticLayer();
+    if (ctx && W && H) ctx.clearRect(0, 0, W, H);
+    if (pieces.length) {
+      draw();
+      if (showAnswer) drawAnswer();
+      requestDrawLoop();
+    }
+}
+
+  function toggleTheme() {
+    setTheme(document.body.classList.contains("light-theme") ? "dark" : "light");
+  }
+
+
+  function loadTheme() {
+    let savedTheme = "dark";
+    try { savedTheme = localStorage.getItem(THEME_STATE_KEY) || "dark"; } catch (err) {}
+    setTheme(savedTheme, false);
+  }
+
+  function toggleSettingsPanel() {
+    if (!settingsPanel || !settingsBtn) return;
+    const show = !settingsPanel.classList.contains("show");
+    settingsPanel.classList.toggle("show", show);
+    settingsPanel.setAttribute("aria-hidden", String(!show));
+    settingsBtn.setAttribute("aria-expanded", String(show));
+  }
+
+  function closeGameSettingsPanel() {
+    if (!gameSettingsPanel) return;
+    gameSettingsPanel.classList.remove("show");
+    if (gameSettingsBtn) gameSettingsBtn.setAttribute("aria-expanded", "false");
+    gameSettingsPanel.setAttribute("aria-hidden", "true");
+  }
+
+  function toggleGameSettingsPanel() {
+    if (!gameSettingsPanel || !gameSettingsBtn) return;
+
+    settingsPanel.classList.remove("show");
+    settingsBtn.setAttribute("aria-expanded", "false");
+    settingsPanel.setAttribute("aria-hidden", "true");
+
+    gameSettingsPanel.classList.toggle("show");
+    const open = gameSettingsPanel.classList.contains("show");
+    gameSettingsBtn.setAttribute("aria-expanded", String(open));
+    gameSettingsPanel.setAttribute("aria-hidden", String(!open));
+  }
+
+
+  function showHome() {
+    document.body.classList.remove("game-mode");
+    document.body.classList.add("home-mode");
+    if (pieceMenu) pieceMenu.classList.remove("show");
+  }
+
+  function startGame() {
+    document.body.classList.remove("home-mode");
+    document.body.classList.add("game-mode");
+    requestAnimationFrame(() => {
+      resize();
+      if (!pieces.length) regenerate(false);
+      draw();
+    });
+  }
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x:e.clientX - r.left, y:e.clientY - r.top };
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    unlockSounds();
+    canvas.setPointerCapture(e.pointerId);
+    const pos = getPos(e);
+    const p = pick(pos.x, pos.y);
+    if (!p) return;
+    playSound("pick");
+
+    clearPopup.classList.remove("show");
+    selected = p;
+    pieces = pieces.filter(q => q !== p);
+    pieces.push(p);
+
+    clearLongPressTimer();
+
+    drag = {
+      p,
+      x0:pos.x,
+      y0:pos.y,
+      px:p.x,
+      py:p.y,
+      before: capturePieceState(p),
+      moved:false,
+      longPressed:false,
+      time:performance.now()
+    };
+
+    longPressTimer = setTimeout(() => {
+      if (!drag || drag.p !== p || drag.moved) return;
+      drag.longPressed = true;
+      p.flip = p.flip ? 0 : 1;
+      animatePieceAction(p, "flip", 1);
+      trySnapToTarget(p);
+      if (!rejectOverlapOrSave(p, drag.before)) {
+        clearDragStaticLayer();
+        draw();
+        return;
+      }
+      checkClear();
+      drawDuringDrag();
+    }, LONG_PRESS_MS);
+
+    canvas.classList.add("grabbing");
+    // TEMP DIAGNOSIS:
+    // Do not build the heavy drag static layer immediately on pointerdown.
+    // This checks whether the shared 1-second lag comes from synchronous layer building.
+    // buildDragStaticLayer(p);
+    // drawDuringDrag();
+    // requestDrawLoop();
+    draw();
+  });
+
+  canvas.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const pos = getPos(e);
+    const dx = pos.x - drag.x0;
+    const dy = pos.y - drag.y0;
+    if (Math.hypot(dx, dy) > 6) {
+      const wasMoved = drag.moved;
+      drag.moved = true;
+      clearLongPressTimer();
+      if (!wasMoved) clearDragStaticLayer();
+    }
+    drag.p.x = drag.px + dx;
+    drag.p.y = drag.py + dy;
+    drag.p.solved = false;
+    drawDuringDrag();
+  });
+
+  canvas.addEventListener("pointerup", e => {
+    unlockSounds();
+    if (!drag) return;
+    clearLongPressTimer();
+    const p = drag.p;
+    if (!drag.longPressed && !drag.moved && performance.now() - drag.time < 360) {
+      p.rot = (p.rot + 1) % 6;
+      animatePieceAction(p, "rotate", 1);
+      playSound("flip");
+      drag = null;
+      canvas.classList.remove("grabbing");
+      clearDragStaticLayer();
+      drawActionAnimationFrame();
+      return;
+    }
+    trySnapToTarget(p);
+    if (!rejectOverlapOrSave(p, drag.before)) {
+      drag = null;
+      canvas.classList.remove("grabbing");
+      clearDragStaticLayer();
+      draw();
+      return;
+    }
+    playSound("put");
+    checkClear();
+    drag = null;
+    canvas.classList.remove("grabbing");
+    if (getActionAnimatingPiece()) drawActionAnimationFrame();
+    else draw();
+  });
+
+  canvas.addEventListener("pointercancel", () => {
+    clearLongPressTimer();
+    clearDragStaticLayer();
+    drag = null;
+    canvas.classList.remove("grabbing");
+    draw();
+  });
+
+  playBtn.addEventListener("click", startGame);
+  settingsBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    toggleSettingsPanel();
+  });
+  if (gameSettingsBtn) gameSettingsBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    toggleGameSettingsPanel();
+  });
+  settingsPanel.addEventListener("click", e => e.stopPropagation());
+  if (gameSettingsPanel) gameSettingsPanel.addEventListener("click", e => e.stopPropagation());
+  lightModeBtn.addEventListener("click", toggleTheme);
+  darkModeBtn.addEventListener("click", toggleTheme);
+  if (themeSwitch) themeSwitch.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    toggleTheme();
+  });
+  if (soundOnBtn) soundOnBtn.addEventListener("click", toggleSound);
+  if (soundOffBtn) soundOffBtn.addEventListener("click", toggleSound);
+  if (soundSwitch) soundSwitch.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    toggleSound();
+  });
+  if (gameLightModeBtn) gameLightModeBtn.addEventListener("click", toggleTheme);
+  if (gameDarkModeBtn) gameDarkModeBtn.addEventListener("click", toggleTheme);
+  if (gameThemeSwitch) gameThemeSwitch.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    toggleTheme();
+  });
+  if (gameSoundOnBtn) gameSoundOnBtn.addEventListener("click", toggleSound);
+  if (gameSoundOffBtn) gameSoundOffBtn.addEventListener("click", toggleSound);
+  if (gameSoundSwitch) gameSoundSwitch.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    toggleSound();
+  });
+  backBtn.addEventListener("click", showHome);
+  document.getElementById("hintBtn").addEventListener("click", showHint);
+  document.getElementById("flipBtn").addEventListener("click", flipSelected);
+  document.getElementById("resetBtn").addEventListener("click", resetPieces);
+  document.getElementById("newBtn").addEventListener("click", () => regenerate(true));
+  document.getElementById("nextBtn").addEventListener("click", () => regenerate(true));
+  document.getElementById("pieceDownBtn").addEventListener("click", () => setSelectedPieceCount(selectedPieceCount - 1, true));
+  document.getElementById("pieceBtn").addEventListener("click", e => {
+    e.stopPropagation();
+    renderPieceMenu();
+    pieceMenu.classList.toggle("show");
+  });
+
+  xpPanel.addEventListener("click", e => {
+    e.stopPropagation();
+    renderPieceMenu();
+    pieceMenu.classList.toggle("show");
+  });
+
+  if (pieceMenu) {
+    pieceMenu.addEventListener("click", e => e.stopPropagation());
+  }
+
+  document.addEventListener("click", () => {    if (pieceMenu) pieceMenu.classList.remove("show");
+    if (settingsPanel && settingsPanel.classList.contains("show")) toggleSettingsPanel();  });
+  document.addEventListener("pointerdown", e => {
+    if (!gameSettingsPanel || !gameSettingsPanel.classList.contains("show")) return;
+    if (gameSettingsPanel.contains(e.target)) return;
+    if (gameSettingsBtn && gameSettingsBtn.contains(e.target)) return;
+    closeGameSettingsPanel();
+  }, true);
+
+  document.getElementById("pieceUpBtn").addEventListener("click", () => setSelectedPieceCount(selectedPieceCount + 1, true));
+  document.getElementById("answerBtn").addEventListener("click", e => {
+    showAnswer = !showAnswer;
+    e.currentTarget.textContent = showAnswer ? "Hide" : "Show";
+    draw();
+  });
+
+  window.addEventListener("keydown", e => {
+    if (!selected) return;
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+
+    e.preventDefault();
+    clearPopup.classList.remove("show");
+    const before = capturePieceState(selected);
+
+    if (e.key === "ArrowRight") {
+      selected.rot = (selected.rot + 1) % 6;
+      animatePieceAction(selected, "rotate", 1);
+    } else {
+      selected.rot = (selected.rot + 5) % 6;
+      animatePieceAction(selected, "rotate", -1);
+    }
+
+    trySnapToTarget(selected);
+    if (!rejectOverlapOrSave(selected, before)) {
+      clearDragStaticLayer();
+      draw();
+      return;
+    }
+    checkClear();
+    if (getActionAnimatingPiece()) drawActionAnimationFrame();
+    else draw();
+  });
+
+  function resize() {
+    const rect = stageCard.getBoundingClientRect();
+    if (rect.width < 20 || rect.height < 20) return;
+    dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+    W = rect.width;
+    H = rect.height;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    clearDragStaticLayer();
+
+    answerCanvas.width = Math.floor((answerCanvas.clientWidth || 144) * dpr);
+    answerCanvas.height = Math.floor((answerCanvas.clientHeight || 116) * dpr);
+    ansCtx.setTransform(dpr,0,0,dpr,0,0);
+
+    if (!pieces.length) regenerate();
+    else {
+      const snapshot = serializeCurrentPuzzle();
+      if (snapshot) buildPiecesFromSnapshot(snapshot);
+      draw();
+    }
+  }
+
+  // XP/Unlock table and player state
+  const UNLOCK_XP_TABLE = buildUnlockXpTable(80);
+
+  playerState = loadPlayerState();
+  selectedPieceCount = Math.max(
+    PIECE_SELECT_MIN,
+    Math.min(
+      playerState.selectedPieceCount || playerState.maxUnlockedPieces || PIECE_SELECT_MIN,
+      PIECE_SELECT_MAX
+    )
+  );
+
+  window.__hexaPuzzleDebug = {
+    interactionPerf: interactionPerfStats,
+    resetInteractionPerf: () => interactionPerfStats.reset(),
+    interactionPerfSummary: () => interactionPerfStats.summary(),
+    interactionPerfLog: () => interactionPerfStats.log(),
+    interactionPerfRecent: (limit = 60) => interactionPerfStats.recent(limit),
+
+    perf: functionPerfStats,
+    resetPerf: () => functionPerfStats.reset(),
+    perfSummary: () => functionPerfStats.summary(),
+    perfLog: () => functionPerfStats.log(),
+    setPerfEnabled: value => { functionPerfStats.enabled = !!value; return functionPerfStats.enabled; },
+
+    get pentahexCount() { return PENTAS.length; },
+    get pentahexes() { return PENTAS; },
+    get pieces() { return pieces; },
+    get hintedPieceIds() { return [...hintedPieceIds]; },
+    get boardCoverageSolved() { return isBoardCoverageSolved(); },
+    regenerate,
+    canonicalSignature,
+    get playerState() { return playerState; },
+    get unlockXpTable() { return UNLOCK_XP_TABLE; },
+    get level() { return getPlayerLevel(playerState.totalXp); },
+    grantDebugXp(amount) {
+      playerState.totalXp += Math.max(0, Number(amount || 0));
+      playerState.maxUnlockedPieces = getMaxUnlockedPieces(playerState.totalXp);
+      selectedPieceCount = Math.max(PIECE_SELECT_MIN, Math.min(selectedPieceCount, PIECE_SELECT_MAX));
+      playerState.selectedPieceCount = selectedPieceCount;
+      savePlayerState();
+      updatePieceUI();
+      regenerate(false);
+    },
+    resetProgress() {
+      playerState = { totalXp:0, maxUnlockedPieces:PIECE_SELECT_MIN, selectedPieceCount:PIECE_SELECT_MIN, clearedCount:0, clearedByPiece:{} };
+      selectedPieceCount = PIECE_SELECT_MIN;
+      savePlayerState();
+      updatePieceUI();
+      regenerate(false);
+    }
+    ,
+    get drawStats() { return { ...drawDebugStats, drag: !!drag, selected: !!selected, animFrame: !!animFrame, dragLayerReady }; },
+    resetDrawStats() { drawDebugStats.reset(); },
+    logDrawStatsEvery(ms = 1000) {
+      if (window.__hexaDrawStatsTimer) clearInterval(window.__hexaDrawStatsTimer);
+      let prevFull = drawDebugStats.fullDraw;
+      let prevDrag = drawDebugStats.dragDraw;
+      let prevBuild = drawDebugStats.buildDragLayer;
+      window.__hexaDrawStatsTimer = setInterval(() => {
+        const nowFull = drawDebugStats.fullDraw;
+        const nowDrag = drawDebugStats.dragDraw;
+        const nowBuild = drawDebugStats.buildDragLayer;
+        console.log({
+          fullDrawPerInterval: nowFull - prevFull,
+          dragDrawPerInterval: nowDrag - prevDrag,
+          buildDragLayerPerInterval: nowBuild - prevBuild,
+          drag: !!drag,
+          selected: !!selected,
+          animFrame: !!animFrame,
+          dragLayerReady
+        });
+        prevFull = nowFull;
+        prevDrag = nowDrag;
+        prevBuild = nowBuild;
+      }, ms);
+      return "draw stats logging started";
+    },
+    stopDrawStatsLog() {
+      if (window.__hexaDrawStatsTimer) clearInterval(window.__hexaDrawStatsTimer);
+      window.__hexaDrawStatsTimer = null;
+      return "draw stats logging stopped";
+    }
+    ,
+    get renderPerfStats() {
+      return {
+        ...renderPerfStats,
+        fullDrawCount: drawDebugStats.fullDraw,
+        dragDrawCount: drawDebugStats.dragDraw,
+        activeAnimations: pieces.filter(p => p.actionAnim).length,
+        selected: !!selected,
+        drag: !!drag,
+        dragLayerReady,
+        dragLayerPieceId: dragLayerPiece ? dragLayerPiece.id : null
+      };
+    },
+    resetRenderPerfStats() {
+      renderPerfStats.reset();
+      drawDebugStats.reset();
+      return "render perf stats reset";
+    },
+    logRenderPerfEvery(ms = 1000) {
+      if (window.__hexaRenderPerfTimer) clearInterval(window.__hexaRenderPerfTimer);
+      let prev = {
+        fullDraw: drawDebugStats.fullDraw,
+        dragDraw: drawDebugStats.dragDraw,
+        fullDrawMs: renderPerfStats.fullDrawMs,
+        selectedPulseMs: renderPerfStats.selectedPulseMs,
+        dragFrameMs: renderPerfStats.dragFrameMs,
+        drawPieceCalls: renderPerfStats.drawPieceCalls,
+        drawnHexCells: renderPerfStats.drawnHexCells,
+        actionAnimationFrames: renderPerfStats.actionAnimationFrames,
+        selectedPulseFrames: renderPerfStats.selectedPulseFrames,
+        dragFrames: renderPerfStats.dragFrames,
+        staticLayerBuilds: renderPerfStats.staticLayerBuilds,
+        staticLayerBuildMs: renderPerfStats.staticLayerBuildMs
+      };
+      window.__hexaRenderPerfTimer = setInterval(() => {
+        const now = {
+          fullDraw: drawDebugStats.fullDraw,
+          dragDraw: drawDebugStats.dragDraw,
+          fullDrawMs: renderPerfStats.fullDrawMs,
+          selectedPulseMs: renderPerfStats.selectedPulseMs,
+          dragFrameMs: renderPerfStats.dragFrameMs,
+          drawPieceCalls: renderPerfStats.drawPieceCalls,
+          drawnHexCells: renderPerfStats.drawnHexCells,
+          actionAnimationFrames: renderPerfStats.actionAnimationFrames,
+          selectedPulseFrames: renderPerfStats.selectedPulseFrames,
+          dragFrames: renderPerfStats.dragFrames,
+          staticLayerBuilds: renderPerfStats.staticLayerBuilds,
+          staticLayerBuildMs: renderPerfStats.staticLayerBuildMs
+        };
+        const fullDraws = now.fullDraw - prev.fullDraw;
+        const selectedPulseFrames = now.selectedPulseFrames - prev.selectedPulseFrames;
+        const dragFrames = now.dragFrames - prev.dragFrames;
+        const staticLayerBuilds = now.staticLayerBuilds - prev.staticLayerBuilds;
+        console.log({
+          fullDraws,
+          dragDraws: now.dragDraw - prev.dragDraw,
+          actionAnimationFrames: now.actionAnimationFrames - prev.actionAnimationFrames,
+          selectedPulseFrames,
+          dragFrames,
+          staticLayerBuilds,
+          avgFullDrawMs: fullDraws ? Number(((now.fullDrawMs - prev.fullDrawMs) / fullDraws).toFixed(2)) : 0,
+          avgSelectedPulseMs: selectedPulseFrames ? Number(((now.selectedPulseMs - prev.selectedPulseMs) / selectedPulseFrames).toFixed(2)) : 0,
+          avgDragFrameMs: dragFrames ? Number(((now.dragFrameMs - prev.dragFrameMs) / dragFrames).toFixed(2)) : 0,
+          avgStaticLayerBuildMs: staticLayerBuilds ? Number(((now.staticLayerBuildMs - prev.staticLayerBuildMs) / staticLayerBuilds).toFixed(2)) : 0,
+          drawPieceCalls: now.drawPieceCalls - prev.drawPieceCalls,
+          drawnHexCells: now.drawnHexCells - prev.drawnHexCells,
+          maxFullDrawMs: Number(renderPerfStats.maxFullDrawMs.toFixed(2)),
+          maxSelectedPulseMs: Number(renderPerfStats.maxSelectedPulseMs.toFixed(2)),
+          maxDragFrameMs: Number(renderPerfStats.maxDragFrameMs.toFixed(2)),
+          maxStaticLayerBuildMs: Number(renderPerfStats.maxStaticLayerBuildMs.toFixed(2)),
+          activeAnimations: pieces.filter(p => p.actionAnim).length,
+          selected: !!selected,
+          drag: !!drag,
+          dragLayerReady,
+          dragLayerPieceId: dragLayerPiece ? dragLayerPiece.id : null
+        });
+        prev = now;
+      }, ms);
+      return "render perf logging started";
+    },
+    stopRenderPerfLog() {
+      if (window.__hexaRenderPerfTimer) clearInterval(window.__hexaRenderPerfTimer);
+      window.__hexaRenderPerfTimer = null;
+      return "render perf logging stopped";
+    }
+    ,
+    renderFlags: renderFeatureFlags,
+    setRenderFlag(name, value) {
+      if (!(name in renderFeatureFlags)) {
+        console.warn("Unknown render flag", name, Object.keys(renderFeatureFlags));
+        return { ...renderFeatureFlags };
+      }
+      renderFeatureFlags[name] = !!value;
+      clearDragStaticLayer();
+      draw();
+      return { ...renderFeatureFlags };
+    },
+    setRenderFlags(nextFlags = {}) {
+      for (const [name, value] of Object.entries(nextFlags)) {
+        if (name in renderFeatureFlags) renderFeatureFlags[name] = !!value;
+      }
+      clearDragStaticLayer();
+      draw();
+      return { ...renderFeatureFlags };
+    },
+    resetRenderFlags() {
+      for (const key of Object.keys(renderFeatureFlags)) renderFeatureFlags[key] = true;
+      if (isMobileRenderDevice()) {
+        renderFeatureFlags.mineralTexture = false;
+      }
+      clearDragStaticLayer();
+      draw();
+      return { ...renderFeatureFlags };
+    },
+    disableAllRenderDetails() {
+      for (const key of Object.keys(renderFeatureFlags)) renderFeatureFlags[key] = false;
+      clearDragStaticLayer();
+      draw();
+      return { ...renderFeatureFlags };
+    }
+  };
+
+  window.addEventListener("resize", resize);
+  loadTheme();
+  updatePieceUI();
+  showHome();
+  canvas.addEventListener("pointerdown", () => {
+    interactionPerfStats.lastPointerDownAt = performance.now();
+  }, { capture: true, passive: true });
+
+  canvas.addEventListener("pointermove", () => {
+    interactionPerfStats.lastPointerMoveAt = performance.now();
+  }, { capture: true, passive: true });
+
+  canvas.addEventListener("pointerup", () => {
+    interactionPerfStats.lastPointerUpAt = performance.now();
+  }, { capture: true, passive: true });
+
+
+})();
+</script>
+</body>
+</html>
