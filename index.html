@@ -1897,22 +1897,57 @@
     const size = pieces[0].hexSize;
     const zones = getLayoutZones();
     const center = pixelToAxial(zones.boardCenterX - pieces[0].targetX, zones.boardCenterY - pieces[0].targetY, size);
-    const minX = zones.boardCenterX - zones.boardW / 2;
-    const maxX = zones.boardCenterX + zones.boardW / 2;
-    const minY = zones.boardCenterY - zones.boardH / 2;
-    const maxY = zones.boardCenterY + zones.boardH / 2;
+    const pad = getBoardFitPad();
+    const minX = zones.boardCenterX - zones.boardW / 2 + pad;
+    const maxX = zones.boardCenterX + zones.boardW / 2 - pad;
+    const minY = zones.boardCenterY - zones.boardH / 2 + pad;
+    const maxY = zones.boardCenterY + zones.boardH / 2 - pad;
+    const hexMarginX = SQRT3 * size * 0.58;
+    const hexMarginY = size * 1.05;
 
     for (let q = center.q - 9; q <= center.q + 9; q++) {
       for (let r = center.r - 7; r <= center.r + 7; r++) {
         const pos = axialToPixel({ q, r }, size);
         const x = pieces[0].targetX + pos.x;
         const y = pieces[0].targetY + pos.y;
-        if (x < minX || x > maxX || y < minY || y > maxY) continue;
+        if (x - hexMarginX < minX || x + hexMarginX > maxX || y - hexMarginY < minY || y + hexMarginY > maxY) continue;
         visible.add(axialKey({ q, r }));
       }
     }
 
     return visible;
+  }
+
+  function pieceVisualBoundsAt(piece, x, y, size = piece.hexSize) {
+    const centers = transformedLocalHexCenters(piece, false, size);
+    const hexMarginX = SQRT3 * size * 0.58;
+    const hexMarginY = size * 1.05;
+    const xs = centers.map(c => x + c.x);
+    const ys = centers.map(c => y + c.y);
+    return {
+      minX: Math.min(...xs) - hexMarginX,
+      maxX: Math.max(...xs) + hexMarginX,
+      minY: Math.min(...ys) - hexMarginY,
+      maxY: Math.max(...ys) + hexMarginY
+    };
+  }
+
+  function clampPieceCenterToStage(piece, x, y, size = piece.hexSize) {
+    const pad = isMobileLayout() ? 28 : 18;
+    const minAllowedX = pad;
+    const maxAllowedX = Math.max(minAllowedX, W - pad);
+    const minAllowedY = pad;
+    const maxAllowedY = Math.max(minAllowedY, H - pad);
+    let nx = x;
+    let ny = y;
+    const bounds = pieceVisualBoundsAt(piece, nx, ny, size);
+
+    if (bounds.minX < minAllowedX) nx += minAllowedX - bounds.minX;
+    if (bounds.maxX + (nx - x) > maxAllowedX) nx -= bounds.maxX + (nx - x) - maxAllowedX;
+    if (bounds.minY < minAllowedY) ny += minAllowedY - bounds.minY;
+    if (bounds.maxY + (ny - y) > maxAllowedY) ny -= bounds.maxY + (ny - y) - maxAllowedY;
+
+    return { x: nx, y: ny };
   }
 
   function getTargetBoardCellSet() {
@@ -2108,8 +2143,23 @@
   }
 
   // Helper to fit the board offset within the visible area (avoid protruding above on mobile)
+  function getBoardFitPad() {
+    return isMobileLayout() ? 28 : 22;
+  }
+
+  function getFittedHexSizeForBounds(bounds, zones) {
+    const pad = getBoardFitPad();
+    const availableW = Math.max(1, zones.boardW - pad * 2);
+    const availableH = Math.max(1, zones.boardH - pad * 2);
+    const rangeX = Math.max(0, bounds.maxX - bounds.minX);
+    const rangeY = Math.max(0, bounds.maxY - bounds.minY);
+    const widthUnits = rangeX + SQRT3 * 1.16;
+    const heightUnits = rangeY + 2.10;
+    return Math.min(32, availableW / widthUnits, availableH / heightUnits);
+  }
+
   function fitBoardOffsetToVisibleArea(bounds, hexSize, offsetX, offsetY, zones) {
-    const pad = isMobileLayout() ? 14 : 20;
+    const pad = getBoardFitPad();
     const hexMarginX = SQRT3 * hexSize * 0.58;
     const hexMarginY = hexSize * 1.05;
 
@@ -2131,14 +2181,6 @@
 
     if (boardMinY < minAllowedY) dy += minAllowedY - boardMinY;
     if (boardMaxY + dy > maxAllowedY) dy -= boardMaxY + dy - maxAllowedY;
-
-    // If the board is slightly taller than the reserved area, prioritize keeping
-    // the upper edge visible on mobile. A small lower overflow is less damaging
-    // than hiding the top of the puzzle under the card edge.
-    const finalMinY = boardMinY + dy;
-    if (isMobileLayout() && finalMinY < minAllowedY) {
-      dy += minAllowedY - finalMinY;
-    }
 
     return { offsetX: offsetX + dx, offsetY: offsetY + dy };
   }
@@ -2426,12 +2468,8 @@
     if (placements.some(pl => !pl)) return false;
 
     const bounds = layoutBounds(placements);
-    const pixelW = Math.max(1, bounds.maxX - bounds.minX + SQRT3 * 2);
-    const pixelH = Math.max(1, bounds.maxY - bounds.minY + 3);
     const zones = getLayoutZones();
-    const boardW = zones.boardW;
-    const boardH = zones.boardH;
-    const hexSize = Math.max(16, Math.min(32, boardW / pixelW, boardH / pixelH));
+    const hexSize = getFittedHexSizeForBounds(bounds, zones);
     let offsetX = zones.boardCenterX - ((bounds.minX + bounds.maxX) / 2) * hexSize;
     let offsetY = zones.boardCenterY - ((bounds.minY + bounds.maxY) / 2) * hexSize;
     ({ offsetX, offsetY } = fitBoardOffsetToVisibleArea(bounds, hexSize, offsetX, offsetY, zones));
@@ -2478,14 +2516,18 @@
       };
 
       const currentCenter = pieceCenterForGridOrigin(piece, piece.origin, false, hexSize);
-      piece.x = Number.isFinite(Number(saved.x)) ? Number(saved.x) : currentCenter.x;
-      piece.y = Number.isFinite(Number(saved.y)) ? Number(saved.y) : currentCenter.y;
+      const restoredX = Number.isFinite(Number(saved.x)) ? Number(saved.x) : currentCenter.x;
+      const restoredY = Number.isFinite(Number(saved.y)) ? Number(saved.y) : currentCenter.y;
+      const restoredCenter = piece.solved ? { x: restoredX, y: restoredY } : clampPieceCenterToStage(piece, restoredX, restoredY, hexSize);
+      piece.x = restoredCenter.x;
+      piece.y = restoredCenter.y;
 
       const oldOrigin = piece.origin;
       piece.origin = { ...piece.startOrigin };
       const startCenter = pieceCenterForGridOrigin(piece, piece.origin, false, hexSize);
-      piece.startX = startCenter.x;
-      piece.startY = startCenter.y;
+      const clampedStartCenter = clampPieceCenterToStage(piece, startCenter.x, startCenter.y, hexSize);
+      piece.startX = clampedStartCenter.x;
+      piece.startY = clampedStartCenter.y;
       piece.origin = oldOrigin;
 
       return piece;
@@ -2702,12 +2744,8 @@
     }
 
     const bounds = layoutBounds(placements);
-    const pixelW = Math.max(1, bounds.maxX - bounds.minX + SQRT3 * 2);
-    const pixelH = Math.max(1, bounds.maxY - bounds.minY + 3);
     const zones = getLayoutZones();
-    const boardW = zones.boardW;
-    const boardH = zones.boardH;
-    const hexSize = Math.max(16, Math.min(32, boardW / pixelW, boardH / pixelH));
+    const hexSize = getFittedHexSizeForBounds(bounds, zones);
     let offsetX = zones.boardCenterX - ((bounds.minX + bounds.maxX) / 2) * hexSize;
     let offsetY = zones.boardCenterY - ((bounds.minY + bounds.maxY) / 2) * hexSize;
     ({ offsetX, offsetY } = fitBoardOffsetToVisibleArea(bounds, hexSize, offsetX, offsetY, zones));
@@ -2725,7 +2763,7 @@
       targetCentroid.y /= targetPts.length;
       const targetPos = axialToPixel(pl.origin, hexSize);
       const start = scatteredStart(i, count, targetPos.x + offsetX + targetCentroid.x, targetPos.y + offsetY + targetCentroid.y);
-      return {
+      const piece = {
         id: i,
         typeId: pl.type.id,
         signature: pl.type.signature,
@@ -2755,13 +2793,24 @@
           return useTarget ? this.targetFlip : this.flip;
         }
       };
+      const clampedStart = clampPieceCenterToStage(piece, piece.x, piece.y, hexSize);
+      piece.x = clampedStart.x;
+      piece.y = clampedStart.y;
+      piece.startX = clampedStart.x;
+      piece.startY = clampedStart.y;
+      return piece;
     });
 
     for (const p of pieces) {
       snapPieceToGrid(p);
+      const clampedCenter = clampPieceCenterToStage(p, p.x, p.y, p.hexSize);
+      p.x = clampedCenter.x;
+      p.y = clampedCenter.y;
     }
 
     for (const p of pieces) {
+      p.startX = p.x;
+      p.startY = p.y;
       p.startOrigin = { ...p.origin };
       p.startRot = p.rot;
       p.startFlip = p.flip;
