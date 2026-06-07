@@ -856,6 +856,13 @@
               <button class="seg-btn" id="soundOffBtn" data-sound="off">Off</button>
             </div>
           </div>
+          <div class="setting-row">
+            <div class="setting-label">BGM</div>
+            <div class="seg-switch" id="bgmSwitch" data-value="on" role="group" aria-label="BGM">
+              <button class="seg-btn active" id="bgmOnBtn" data-bgm="on">On</button>
+              <button class="seg-btn" id="bgmOffBtn" data-bgm="off">Off</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -905,6 +912,13 @@
         <button class="seg-btn" id="gameSoundOffBtn" data-sound="off">Off</button>
       </div>
     </div>
+    <div class="setting-row">
+      <div class="setting-label">BGM</div>
+      <div class="seg-switch" id="gameBgmSwitch" data-value="on" role="group" aria-label="BGM">
+        <button class="seg-btn active" id="gameBgmOnBtn" data-bgm="on">On</button>
+        <button class="seg-btn" id="gameBgmOffBtn" data-bgm="off">Off</button>
+      </div>
+    </div>
   </div>
 
   <div class="stage-card game-screen" id="stageCard">
@@ -952,12 +966,18 @@
   const soundOnBtn = document.getElementById("soundOnBtn");
   const soundOffBtn = document.getElementById("soundOffBtn");
   const soundSwitch = document.getElementById("soundSwitch");
+  const bgmOnBtn = document.getElementById("bgmOnBtn");
+  const bgmOffBtn = document.getElementById("bgmOffBtn");
+  const bgmSwitch = document.getElementById("bgmSwitch");
   const gameLightModeBtn = document.getElementById("gameLightModeBtn");
   const gameDarkModeBtn = document.getElementById("gameDarkModeBtn");
   const gameThemeSwitch = document.getElementById("gameThemeSwitch");
   const gameSoundOnBtn = document.getElementById("gameSoundOnBtn");
   const gameSoundOffBtn = document.getElementById("gameSoundOffBtn");
   const gameSoundSwitch = document.getElementById("gameSoundSwitch");
+  const gameBgmOnBtn = document.getElementById("gameBgmOnBtn");
+  const gameBgmOffBtn = document.getElementById("gameBgmOffBtn");
+  const gameBgmSwitch = document.getElementById("gameBgmSwitch");
   const backBtn = document.getElementById("backBtn");
   const stageCard = document.getElementById("stageCard");
   const statusEl = document.getElementById("status");
@@ -980,6 +1000,7 @@
   const PUZZLE_STATE_KEY = "hexaGlassPuzzleByPieceCount";
   const THEME_STATE_KEY = "hexaGlassTheme";
   const SOUND_STATE_KEY = "hexaGlassSoundEnabled";
+  const BGM_STATE_KEY = "hexaGlassBgmEnabled";
   const DISABLE_PUZZLE_PERSISTENCE_FOR_TESTING = false;
   function isMobileRenderDevice() {
     return window.innerWidth <= 540 || window.matchMedia?.("(pointer: coarse)")?.matches;
@@ -1186,6 +1207,7 @@
     clear: "sound/clear.mp3",
     rankup: "sound/rankup.mp3"
   };
+  const BGM_FILE = "sound/hexafit.mp3";
 
   const soundPool = Object.fromEntries(
     Object.entries(SOUND_FILES).map(([key, src]) => [key, Array.from({ length: 3 }, () => {
@@ -1197,8 +1219,14 @@
   );
 
   const soundPoolIndex = Object.fromEntries(Object.keys(SOUND_FILES).map(key => [key, 0]));
+  const bgmAudio = new Audio(BGM_FILE);
+  bgmAudio.preload = "auto";
+  bgmAudio.loop = true;
+  bgmAudio.volume = .36;
+
   let soundUnlocked = false;
   let soundEnabled = localStorage.getItem(SOUND_STATE_KEY) !== "off";
+  let bgmEnabled = localStorage.getItem(BGM_STATE_KEY) !== "off";
   let debugSoundsDisabled = false;
 
   function unlockSounds() {
@@ -1207,6 +1235,22 @@
     for (const pool of Object.values(soundPool)) {
       for (const audio of pool) audio.load();
     }
+    bgmAudio.load();
+    startBgm();
+  }
+
+  function startBgm() {
+    if (debugSoundsDisabled || !bgmEnabled || !soundUnlocked) return;
+    try {
+      const result = bgmAudio.play();
+      if (result && typeof result.catch === "function") result.catch(() => {});
+    } catch (err) {}
+  }
+
+  function stopBgm() {
+    try {
+      bgmAudio.pause();
+    } catch (err) {}
   }
 
   function playSound(name) {
@@ -1243,6 +1287,9 @@
       },
       soundEnabled() {
         return soundEnabled;
+      },
+      bgmEnabled() {
+        return bgmEnabled;
       }
     });
   }
@@ -3470,6 +3517,28 @@
     setSoundEnabled(!soundEnabled);
   }
 
+  function setBgmEnabled(enabled, persist = true) {
+    bgmEnabled = !!enabled;
+    if (bgmSwitch) bgmSwitch.dataset.value = bgmEnabled ? "on" : "off";
+    if (gameBgmSwitch) gameBgmSwitch.dataset.value = bgmEnabled ? "on" : "off";
+    if (bgmOnBtn) bgmOnBtn.classList.toggle("active", bgmEnabled);
+    if (bgmOffBtn) bgmOffBtn.classList.toggle("active", !bgmEnabled);
+    if (gameBgmOnBtn) gameBgmOnBtn.classList.toggle("active", bgmEnabled);
+    if (gameBgmOffBtn) gameBgmOffBtn.classList.toggle("active", !bgmEnabled);
+    if (bgmOnBtn) bgmOnBtn.setAttribute("aria-pressed", String(bgmEnabled));
+    if (bgmOffBtn) bgmOffBtn.setAttribute("aria-pressed", String(!bgmEnabled));
+    if (gameBgmOnBtn) gameBgmOnBtn.setAttribute("aria-pressed", String(bgmEnabled));
+    if (gameBgmOffBtn) gameBgmOffBtn.setAttribute("aria-pressed", String(!bgmEnabled));
+    if (persist) localStorage.setItem(BGM_STATE_KEY, bgmEnabled ? "on" : "off");
+
+    if (bgmEnabled) startBgm();
+    else stopBgm();
+  }
+
+  function toggleBgm() {
+    setBgmEnabled(!bgmEnabled);
+  }
+
   function normalizeTheme(value) {
     return value === "light" ? "light" : "dark";
   }
@@ -3548,6 +3617,8 @@
   }
 
   function startGame() {
+    unlockSounds();
+    startBgm();
     document.body.classList.remove("home-mode");
     document.body.classList.add("game-mode");
     requestAnimationFrame(() => {
@@ -3693,6 +3764,16 @@
     if (e.target.closest("button")) return;
     toggleSound();
   });
+  if (bgmOnBtn) bgmOnBtn.addEventListener("click", () => {
+    unlockSounds();
+    setBgmEnabled(true);
+  });
+  if (bgmOffBtn) bgmOffBtn.addEventListener("click", () => setBgmEnabled(false));
+  if (bgmSwitch) bgmSwitch.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    if (!bgmEnabled) unlockSounds();
+    toggleBgm();
+  });
   if (gameLightModeBtn) gameLightModeBtn.addEventListener("click", toggleTheme);
   if (gameDarkModeBtn) gameDarkModeBtn.addEventListener("click", toggleTheme);
   if (gameThemeSwitch) gameThemeSwitch.addEventListener("click", e => {
@@ -3704,6 +3785,16 @@
   if (gameSoundSwitch) gameSoundSwitch.addEventListener("click", e => {
     if (e.target.closest("button")) return;
     toggleSound();
+  });
+  if (gameBgmOnBtn) gameBgmOnBtn.addEventListener("click", () => {
+    unlockSounds();
+    setBgmEnabled(true);
+  });
+  if (gameBgmOffBtn) gameBgmOffBtn.addEventListener("click", () => setBgmEnabled(false));
+  if (gameBgmSwitch) gameBgmSwitch.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    if (!bgmEnabled) unlockSounds();
+    toggleBgm();
   });
   backBtn.addEventListener("click", showHome);
   document.getElementById("hintBtn").addEventListener("click", showHint);
@@ -3824,6 +3915,8 @@
     get pieces() { return pieces; },
     get hintedPieceIds() { return [...hintedPieceIds]; },
     get boardCoverageSolved() { return isBoardCoverageSolved(); },
+    soundEnabled() { return soundEnabled; },
+    bgmEnabled() { return bgmEnabled; },
     regenerate,
     canonicalSignature,
     get playerState() { return playerState; },
@@ -4001,6 +4094,8 @@
 
   window.addEventListener("resize", resize);
   loadTheme();
+  setSoundEnabled(soundEnabled, false);
+  setBgmEnabled(bgmEnabled, false);
   updatePieceUI();
   showHome();
   canvas.addEventListener("pointerdown", () => {
